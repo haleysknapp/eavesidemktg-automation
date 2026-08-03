@@ -3,9 +3,10 @@
 set -e
 cd "$(dirname "$0")"
 CRED_FILE=""
-for c in "../../gads-credentials.txt" "../gads-credentials.txt" "$HOME/gads-credentials.txt"; do
-  [ -f "$c" ] && CRED_FILE="$c" && break
+for c in "$HOME/gads-report/.env" "gads-report/.env" "../../gads-credentials.txt" "../gads-credentials.txt" "$HOME/gads-credentials.txt"; do
+  [ -f "$c" ] && grep -q '^github_token=' "$c" && CRED_FILE="$c" && break
 done
+[ -n "$CRED_FILE" ] || { echo "❌ github_token not found (checked gads-report/.env and gads-credentials.txt)"; exit 1; }
 TOKEN=$(grep '^github_token=' "$CRED_FILE" | cut -d= -f2)
 [ -n "$TOKEN" ] || { echo "❌ github_token not found in gads-credentials.txt"; exit 1; }
 git init -q -b main 2>/dev/null || true
