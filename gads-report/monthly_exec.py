@@ -233,8 +233,7 @@ def main():
 <title>{E(ACCOUNT_NAME)} — monthly marketing report · {E(label)}</title>
 <style>{rh.CSS}</style></head>
 <body class="viz-root"><div class="wrap">
-  <h1>{E(ACCOUNT_NAME)} — Monthly Marketing Report</h1>
-  <div class="sub">{E(label)} · Google Ads + Local Services Ads · prepared by Eaveside</div>
+  {rh.brand_header("Monthly Marketing Report", label, f"{ACCOUNT_NAME} · Google Ads + Local Services Ads")}
   {tiles}
   {narrative}
   {beyond}
@@ -243,8 +242,7 @@ def main():
   <div style="margin-top:16px">{charts}</div>
   {table}
   {focus}
-  <div class="mut" style="margin-top:20px">A "lead" = a phone call or form submission from search ads, or a charged
-    Local Services lead. Figures may restate slightly as late conversions land.</div>
+  {rh.brand_footer('A "lead" = a phone call or form submission from search ads, or a charged Local Services lead. Figures may restate slightly as late conversions land.')}
 </div><div id="tip"></div>{rh.TIP_JS}</body></html>"""
 
     os.makedirs(OUT_DIR, exist_ok=True)

@@ -1,46 +1,125 @@
-"""Polished HTML rendering for the Roofing Force daily report."""
+"""Polished HTML rendering for the Roofing Force reports — Eaveside × Roofing Force branding."""
 import html as _html
 import json
+import os as _os
+import base64 as _b64
 
 E = _html.escape
 
-# ---- palette (validated reference palette; light/dark) ----
-CSS = """
+# ---- embedded assets (logo + Inter font) ----
+_ASSET_DIR = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "assets")
+
+def _asset_b64(name):
+    try:
+        with open(_os.path.join(_ASSET_DIR, name), "rb") as f:
+            return _b64.b64encode(f.read()).decode()
+    except Exception:
+        return ""
+
+_RF_LOGO_B64 = _asset_b64("rf-logo.png")
+
+def _font_face(weight, fname):
+    b = _asset_b64(fname)
+    if not b: return ""
+    return ("@font-face{font-family:'Inter';font-style:normal;font-weight:%d;font-display:swap;"
+            "src:url(data:font/woff2;base64,%s) format('woff2');}" % (weight, b))
+
+FONT_CSS = (_font_face(400, "inter-latin-400-normal.woff2") +
+            _font_face(600, "inter-latin-600-normal.woff2") +
+            _font_face(800, "inter-latin-800-normal.woff2"))
+
+def brand_header(kicker, title, sub):
+    """Eaveside × Roofing Force report masthead."""
+    logo = (f'<span class="logobox"><img src="data:image/png;base64,{_RF_LOGO_B64}" alt="Roofing Force" class="rf-logo"></span>'
+            if _RF_LOGO_B64 else '<span class="logotext">ROOFING FORCE</span>')
+    return f"""
+  <div class="masthead">
+    {logo}
+    <div class="mast-right">
+      <div class="ewordmark">EAVESIDE</div>
+      <div class="mast-sub">Marketing performance</div>
+    </div>
+  </div>
+  <div class="titleblock">
+    <div class="kicker">{E(kicker)}</div>
+    <h1>{E(title)}</h1>
+    <div class="sub">{E(sub)}</div>
+  </div>
+  <div class="rule"></div>"""
+
+def brand_footer(note=""):
+    n = f'<div class="mut" style="margin-top:14px">{E(note)}</div>' if note else ""
+    return f"""{n}
+  <div class="footer">
+    <span class="ewordmark small">EAVESIDE</span>
+    <span class="footnote">Prepared by Eaveside · eaveside.com · for Roofing Force leadership</span>
+  </div>"""
+
+# ---- palette (brand: Eaveside slate #3a5a72 structure · RF red #d02028 accent;
+#      chart series validated light [#2569a3,#d02028] / dark [#4f95d6,#e2565e]) ----
+CSS = FONT_CSS + """
 :root { color-scheme: light dark; }
 .viz-root {
-  --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
-  --grid:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,.10);
-  --s1:#2a78d6; --s1-track:#cde2fb; --s2:#eb6834;
-  --good:#0ca30c; --goodtext:#006300; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
+  --page:#f6f5f2; --surface:#ffffff; --ink:#16181d; --ink2:#4d5560; --muted:#8a8f98;
+  --grid:#e7e6e1; --baseline:#c9c8c0; --border:rgba(22,24,29,.09);
+  --slate:#3a5a72; --red:#d02028;
+  --s1:#2569a3; --s1-track:#d3e4f2; --s2:#d02028;
+  --good:#0ca30c; --goodtext:#006300; --warn:#fab219; --serious:#ec835a; --crit:#b0322f;
+  --shadow:0 1px 3px rgba(22,24,29,.06), 0 4px 16px rgba(22,24,29,.04);
 }
 @media (prefers-color-scheme: dark) {
   .viz-root {
-    --page:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
-    --grid:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,.10);
-    --s1:#3987e5; --s1-track:#184f95; --s2:#d95926;
-    --good:#0ca30c; --goodtext:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
+    --page:#101114; --surface:#1a1c21; --ink:#f2f3f5; --ink2:#b8bdc6; --muted:#868b94;
+    --grid:#2a2d33; --baseline:#3b3f47; --border:rgba(255,255,255,.09);
+    --slate:#8fb0c9; --red:#e2565e;
+    --s1:#4f95d6; --s1-track:#1c466e; --s2:#e2565e;
+    --good:#0ca30c; --goodtext:#31c231; --warn:#fab219; --serious:#ec835a; --crit:#e05d5a;
+    --shadow:none;
   }
 }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--page); color:var(--ink);
-  font-family:system-ui,-apple-system,"Segoe UI",sans-serif; font-size:14px; line-height:1.45; }
-.wrap { max-width:1040px; margin:0 auto; padding:28px 20px 60px; }
-h1 { font-size:20px; font-weight:650; margin:0; }
-.sub { color:var(--ink2); font-size:12px; }
+  font-family:'Inter',system-ui,-apple-system,"Segoe UI",sans-serif; font-size:14px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; }
+.wrap { max-width:1040px; margin:0 auto; padding:36px 24px 56px; }
+/* masthead */
+.masthead { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.logobox { display:inline-flex; background:#fff; border-radius:12px; padding:10px 14px;
+  border:1px solid var(--border); }
+.rf-logo { height:54px; display:block; }
+.logotext { font-weight:800; letter-spacing:.14em; font-size:16px; }
+.mast-right { text-align:right; }
+.ewordmark { font-weight:800; font-size:15px; letter-spacing:.22em; color:var(--slate); }
+.ewordmark.small { font-size:11px; letter-spacing:.2em; }
+.mast-sub { font-size:11px; color:var(--muted); letter-spacing:.04em; margin-top:2px; }
+.titleblock { margin-top:26px; }
+.kicker { font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.14em;
+  color:var(--red); }
+h1 { font-size:34px; font-weight:800; letter-spacing:-.02em; margin:2px 0 4px; }
+.rule { height:3px; margin-top:18px; border-radius:2px;
+  background:linear-gradient(90deg, var(--red) 0 96px, var(--slate) 96px 128px, var(--grid) 128px 100%); }
+.footer { display:flex; align-items:baseline; gap:12px; margin-top:32px; padding-top:14px;
+  border-top:1px solid var(--grid); }
+.footnote { font-size:11px; color:var(--muted); }
+.sub { color:var(--ink2); font-size:12.5px; }
 .mut { color:var(--muted); font-size:12px; }
-.card { background:var(--surface); border:1px solid var(--border); border-radius:10px;
-  padding:16px 18px; margin-top:16px; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:18px 20px; margin-top:16px; box-shadow:var(--shadow); }
 @media print {
   .card, .tile, .chart, .charts > * { break-inside:avoid; page-break-inside:avoid; }
   .tiles { break-inside:avoid; }
+  .wrap { padding-top:16px; }
 }
-h2 { font-size:13px; font-weight:650; margin:0 0 10px; letter-spacing:.01em;
-  text-transform:uppercase; color:var(--ink2); }
+h2 { display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:700; margin:0 0 12px;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--slate); }
+h2::before { content:""; width:16px; height:3px; border-radius:2px; background:var(--red); flex:none; }
 /* stat tiles */
 .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:16px; }
-.tile { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
-.tile .label { font-size:12px; color:var(--ink2); }
-.tile .value { font-size:26px; font-weight:600; margin-top:2px; }
+.tile { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 18px;
+  box-shadow:var(--shadow); }
+.tile .label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); }
+.tile .value { font-size:30px; font-weight:800; letter-spacing:-.02em; margin-top:4px;
+  font-variant-numeric:tabular-nums; }
 .tile .delta { font-size:12px; margin-top:2px; }
 .up-good { color:var(--goodtext); } .down-bad { color:var(--crit); } .neutral { color:var(--ink2); }
 /* alerts */
@@ -258,14 +337,13 @@ def render(run_date, account_name, account_id, camps, urgent, notes, daily, term
 <title>{E(account_name)} — Google Ads daily · {run_date}</title>
 <style>{CSS}</style></head>
 <body class="viz-root"><div class="wrap">
-  <h1>{E(account_name)} — Google Ads Daily</h1>
-  <div class="sub">{run_date} · account {account_id} · yesterday + trailing 7 days (vs prior 7)</div>
+  {brand_header("Daily Pulse — Google Ads", str(run_date), f"{account_name} · account {account_id} · yesterday + trailing 7 days (vs prior 7)")}
   {tiles}
   {urgent_html}
   {camp_html}
   <div style="margin-top:16px">{charts}</div>
   {notes_html}
-  <div class="mut" style="margin-top:20px">Generated automatically · data via Google Ads API · conversions may lag up to 24h</div>
+  {brand_footer('Generated automatically · data via Google Ads API · conversions may lag up to 24h')}
 </div><div id="tip"></div>{TIP_JS}</body></html>"""
 
 def delta_html(new, old, up_good=None):

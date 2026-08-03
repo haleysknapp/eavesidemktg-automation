@@ -194,9 +194,7 @@ def render(run_date, d_start, d_end, terms, all_weeks, camp_cost):
 <title>{E(ACCOUNT_NAME)} — search terms weekly · {run_date}</title>
 <style>{rh.CSS}</style></head>
 <body class="viz-root"><div class="wrap">
-  <h1>{E(ACCOUNT_NAME)} — Search Terms Weekly</h1>
-  <div class="sub">{run_date} · lookback {d_start} → {d_end} ({LOOKBACK_WEEKS} weeks) ·
-    verdicts: junk = cut at any spend · relevant = cut at {fmt(CUT_RELEVANT_SPEND)}/0 leads · watch from {fmt(WATCH_SPEND)}</div>
+  {rh.brand_header("Search Terms Review", f"{run_date}", f"{ACCOUNT_NAME} · lookback {d_start} → {d_end} ({LOOKBACK_WEEKS} weeks) · junk = cut at any spend · relevant = cut at {fmt(CUT_RELEVANT_SPEND)}/0 leads · watch from {fmt(WATCH_SPEND)}")}
   {tiles}
   {table("✂️ CUT — add these as negatives", cuts, "Nothing to cut this week.")}
   {table("❓ VERIFY — looks like a company name; competitor or coincidence?", verify, "Nothing to verify.")}

@@ -197,7 +197,7 @@ def main():
             if m and str(wk_start) <= m.group(1) <= str(d_end):
                 items.append(m.group(2).strip())
         if items:
-            beyond = ('<div class="card"><h2>Beyond paid media — this week</h2>' +
+            beyond = ('<div class="card"><h2>Initiatives — this week</h2>' +
                       "".join(f'<p style="margin:6px 0">• {E(i)}</p>' for i in items) + "</div>")
 
     html_out = f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -205,16 +205,14 @@ def main():
 <title>{E(ACCOUNT_NAME)} — weekly marketing report · {today}</title>
 <style>{rh.CSS}</style></head>
 <body class="viz-root"><div class="wrap">
-  <h1>{E(ACCOUNT_NAME)} — Weekly Marketing Report</h1>
-  <div class="sub">Week of {wk_start.strftime('%b %-d')} – {d_end.strftime('%b %-d, %Y')} · Google Ads + Local Services Ads · prepared by Eaveside</div>
+  {rh.brand_header("Weekly Marketing Report", f"Week of {wk_start.strftime('%b %-d')} – {d_end.strftime('%b %-d, %Y')}", f"{ACCOUNT_NAME} · Google Ads + Local Services Ads")}
   {tiles}
   {narrative}
   {beyond}
   {chan}
   <div style="margin-top:16px">{charts}</div>
   {table}
-  <div class="mut" style="margin-top:20px">A "lead" = a phone call or form submission from search ads, or a charged
-    Local Services lead. Conversion data can lag ~24h; minor restatements are normal.</div>
+  {rh.brand_footer('A "lead" = a phone call or form submission from search ads, or a charged Local Services lead. Conversion data can lag ~24h; minor restatements are normal.')}
 </div><div id="tip"></div>{rh.TIP_JS}</body></html>"""
 
     os.makedirs(OUT_DIR, exist_ok=True)
