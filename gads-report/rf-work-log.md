@@ -10,8 +10,8 @@ Format (keep it exactly like this so the reports can parse it):
 
 ## Log
 
+- 2026-07-15: Deep research into AI-era SEO — how Google's AI-powered results pick their sources — with the findings built into the new website's structure and content.
 - 2026-07-25: Google Ads account cleanup — campaigns rebuilt into a clean, scalable structure with tightened keywords and verified conversion tracking.
 - 2026-07-28: Automated wasted-spend detection now live — every search term is reviewed and junk searches are blocked before they burn budget.
 - 2026-07-31: New dedicated market landing pages went live (offer-led; St. Louis first) to lift ad quality and lower cost per click.
-- 2026-07-15: Deep research into AI-era SEO — how Google's AI-powered results pick their sources — with the findings built into the new website's structure and content.
 - 2026-07-31: Website rebuild progressing — nearing QA.

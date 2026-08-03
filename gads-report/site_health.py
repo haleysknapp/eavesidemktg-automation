@@ -44,7 +44,7 @@ def card(rh, title="Website status"):
     times = [r["secs"] for r in rows if r["secs"] is not None]
     avg = sum(times) / len(times) if times else None
     if not bad and not no_track and not slow:
-        line = (f"All {len(rows)} key pages up (homepage + market landing pages) · "
+        line = (f"All {len(rows)} key pages up (homepage, market landing pages + top organic pages) · "
                 f"average load {avg:.1f}s · tracking verified on every page." if avg else
                 f"All {len(rows)} key pages up · tracking verified on every page.")
         return (f'<div class="card"><h2>{rh.E(title)}</h2>'
