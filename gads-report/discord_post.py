@@ -124,6 +124,18 @@ def say(content, channel_id=None, reply_to=None):
         print(f"[discord-bot] HTTP {r.status_code}: {r.text[:300]}")
     return r.status_code == 200
 
+def react(message_id, emoji="👀", channel_id=None):
+    """Add a reaction to a message — the 'seen it / on it' acknowledgment.
+    Use 👀 when starting to process a human message, ✅ when the action is done,
+    ⚠️ if the action failed. Returns True on success."""
+    import urllib.parse, requests as _rq
+    tok, chan = _bot_creds()
+    chan = channel_id or chan
+    e = urllib.parse.quote(emoji)
+    r = _rq.put(f"{API}/channels/{chan}/messages/{message_id}/reactions/{e}/@me",
+                headers=_headers(tok))
+    return r.status_code in (200, 204)
+
 def fetch_after(after_id=None, channel_id=None, limit=50):
     """Fetch messages after a given ID (ascending). Excludes bot's own messages."""
     tok, chan = _bot_creds()

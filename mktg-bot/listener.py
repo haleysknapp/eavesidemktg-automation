@@ -74,6 +74,15 @@ def build_prompt(author, content, ref_author=None, ref_content=None, msg_id=None
             f"Remember: every reply to the channel goes through discord_post.dp.say(...) — "
             f"your stdout is not visible to anyone.")
 
+async def react_to(mid, emoji):
+    """Best-effort reaction on a message — 👀 = seen/working, ✅ = done, ⚠️ = failed."""
+    try:
+        ch = client.get_channel(CHANNEL_ID) or await client.fetch_channel(CHANNEL_ID)
+        msg = await ch.fetch_message(int(mid))
+        await msg.add_reaction(emoji)
+    except Exception as e:
+        print(f"reaction {emoji} on {mid} failed: {e}", flush=True)
+
 async def worker():
     while True:
         item = await queue.get()
@@ -85,8 +94,12 @@ async def worker():
             if r.returncode != 0:
                 print("claude error:", (r.stderr or r.stdout)[:500], flush=True)
                 say_fallback("⚠️ I hit an error handling that — try rephrasing, or Haley can check the listener logs.")
+                await react_to(mid, "⚠️")
+            else:
+                await react_to(mid, "✅")
         except subprocess.TimeoutExpired:
             say_fallback("⚠️ That took too long and I gave up — try a simpler request.")
+            await react_to(mid, "⚠️")
         except FileNotFoundError:
             say_fallback("⚠️ Claude Code CLI not found on this machine — Haley, run the installer again.")
         st = load_state()
@@ -104,6 +117,10 @@ async def enqueue_message(m):
     if m.reference and m.reference.resolved and isinstance(m.reference.resolved, discord.Message):
         ref_a = m.reference.resolved.author.display_name
         ref_c = m.reference.resolved.content or "(attachment/embed — likely a report)"
+    try:
+        await m.add_reaction("👀")   # instant "I see it" acknowledgment
+    except Exception:
+        pass
     await queue.put((m.author.display_name, content, ref_a, ref_c, m.id))
 
 @client.event
