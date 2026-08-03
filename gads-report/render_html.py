@@ -136,6 +136,7 @@ th { text-align:left; font-weight:600; font-size:11px; text-transform:uppercase;
 td { padding:8px 10px; border-bottom:1px solid var(--grid); vertical-align:top; }
 tr:last-child td { border-bottom:none; }
 td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+td.split { color:var(--ink2); }
 .meter { height:6px; border-radius:3px; background:var(--s1-track); margin-top:5px; width:110px; overflow:hidden; }
 .meter > div { height:100%; border-radius:3px; }
 .qs { display:inline-block; min-width:20px; text-align:center; font-weight:600; font-variant-numeric:tabular-nums; }
@@ -184,6 +185,36 @@ TIP_JS = """
 """
 
 def fmt_usd(x, dec=0): return f"${x:,.{dec}f}"
+
+def merged_market_table(title, search_rows, lsa_rows):
+    """One row per market: total leads + Search/LSA split columns, combined spend, blended CPL.
+    search_rows / lsa_rows: iterables of (market_name, leads, cost). Markets sharing a name merge;
+    a channel the market doesn't run shows an em dash rather than 0."""
+    m = {}
+    def slot(name):
+        return m.setdefault(name, {"s_leads": None, "s_cost": 0.0, "l_leads": None, "l_cost": 0.0})
+    for name, leads, cost in search_rows:
+        r = slot(name); r["s_leads"] = (r["s_leads"] or 0) + leads; r["s_cost"] += cost
+    for name, leads, cost in lsa_rows:
+        r = slot(name); r["l_leads"] = (r["l_leads"] or 0) + leads; r["l_cost"] += cost
+    rows = ""
+    for name, r in sorted(m.items(), key=lambda kv: -(kv[1]["s_cost"] + kv[1]["l_cost"])):
+        cost = r["s_cost"] + r["l_cost"]
+        leads = (r["s_leads"] or 0) + (r["l_leads"] or 0)
+        if cost < 1 and not leads: continue
+        cpl = cost / leads if leads else None
+        s = f'{r["s_leads"]:.0f}' if r["s_leads"] is not None else '<span class="mut">—</span>'
+        l = f'{r["l_leads"]:.0f}' if r["l_leads"] is not None else '<span class="mut">—</span>'
+        rows += (f'<tr><td><b>{E(name)}</b></td>'
+                 f'<td class="num">{leads:.0f}</td>'
+                 f'<td class="num split">{s}</td>'
+                 f'<td class="num split">{l}</td>'
+                 f'<td class="num">{fmt_usd(cost)}</td>'
+                 f'<td class="num">{fmt_usd(cpl) if cpl else "—"}</td></tr>')
+    return (f'<div class="card"><h2>{E(title)}</h2><table>'
+            '<tr><th>Market</th><th class="num">Leads</th><th class="num">Search</th>'
+            '<th class="num">LSA</th><th class="num">Spend</th><th class="num">Cost/lead</th></tr>'
+            + rows + '</table></div>')
 def pct(x): return f"{x*100:.0f}%" if x is not None else "—"
 
 def _delta(new, old, up_good=None, suffix=""):

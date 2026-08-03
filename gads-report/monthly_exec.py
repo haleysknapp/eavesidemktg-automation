@@ -173,22 +173,10 @@ def main():
         for suf in (" New Search", " - Search", " Search"):
             if name.endswith(suf): return name[: -len(suf)]
         return name
-    rows = ""
-    for cname, v in sorted(ads_camp_m.items(), key=lambda kv: -kv[1]["cost"]):
-        if v["cost"] < 1: continue
-        cpl_c = v["cost"] / v["conv"] if v["conv"] else None
-        rows += (f'<tr><td><b>{E(market_name(cname))}</b> <span class="mut">search</span></td>'
-                 f'<td class="num">{v["conv"]:.0f}</td><td class="num">{rh.fmt_usd(v["cost"])}</td>'
-                 f'<td class="num">{rh.fmt_usd(cpl_c) if cpl_c else "—"}</td></tr>')
-    for name, v in sorted(lsa_market_m.items(), key=lambda kv: -kv[1]["cost"]):
-        if v["cost"] < 1 and not v["leads"]: continue
-        cpl_c = v["cost"] / v["leads"] if v["leads"] else None
-        rows += (f'<tr><td><b>{E(name)}</b> <span class="mut">LSA</span></td>'
-                 f'<td class="num">{v["leads"]}</td><td class="num">{rh.fmt_usd(v["cost"])}</td>'
-                 f'<td class="num">{rh.fmt_usd(cpl_c) if cpl_c else "—"}</td></tr>')
-    table = f"""<div class="card"><h2>By market — {E(label)}</h2><table>
-      <tr><th>Market</th><th class="num">Leads</th><th class="num">Spend</th><th class="num">Cost/lead</th></tr>
-      {rows}</table></div>"""
+    table = rh.merged_market_table(
+        f"By market — {label}",
+        [(market_name(c), v["conv"], v["cost"]) for c, v in ads_camp_m.items() if v["cost"] >= 1],
+        [(n, v["leads"], v["cost"]) for n, v in lsa_market_m.items() if v["cost"] >= 1 or v["leads"]])
 
     # beyond paid media (work log entries in month)
     beyond = ""

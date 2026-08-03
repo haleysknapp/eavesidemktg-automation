@@ -170,18 +170,10 @@ def main():
                             lambda v: f"${v:,.0f}", lambda d, v: f"<b>week ending {d}</b><br>{rh.fmt_usd(v)}") +
               '</div>')
 
-    def crow(label, leads, spend, tag=""):
-        ccpl = spend / leads if leads else None
-        return f"""<tr><td><b>{E(label)}</b> <span class="mut">{tag}</span></td>
-          <td class="num">{leads:.0f}</td>
-          <td class="num">{rh.fmt_usd(spend)}</td>
-          <td class="num">{rh.fmt_usd(ccpl) if ccpl else '—'}</td></tr>"""
-    rows = "".join(crow(market(c["name"]), c["wk"]["conv"], c["wk"]["cost"], "search") for c in enabled)
-    rows += "".join(crow(x["name"], x["wk_leads"], x["wk_cost"], "LSA")
-                    for x in lsa_rows_out if x["wk_cost"] or x["wk_leads"])
-    table = f"""<div class="card"><h2>By market (this week)</h2><table>
-      <tr><th>Market</th><th class="num">Leads</th><th class="num">Spend</th><th class="num">Cost/lead</th></tr>
-      {rows}</table></div>"""
+    table = rh.merged_market_table(
+        "By market (this week)",
+        [(market(c["name"]), c["wk"]["conv"], c["wk"]["cost"]) for c in enabled],
+        [(x["name"], x["wk_leads"], x["wk_cost"]) for x in lsa_rows_out if x["wk_cost"] or x["wk_leads"]])
 
     narrative = '<div class="card"><h2>What\'s happening</h2>' + \
                 "".join(f'<p style="margin:8px 0">{E(s)}</p>' for s in story) + "</div>"
