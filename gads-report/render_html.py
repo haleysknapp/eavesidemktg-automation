@@ -112,6 +112,8 @@ h1 { font-size:34px; font-weight:800; letter-spacing:-.02em; margin:2px 0 4px; }
   .tiles { break-inside:avoid; }
   .card, .tile { border-color:rgba(22,24,29,.16); }
   .wrap { padding-top:8px; }
+  .endgroup { break-inside:avoid; page-break-inside:avoid; }
+  .footer { break-before:avoid; page-break-before:avoid; }
 }
 h2 { display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:700; margin:0 0 12px;
   letter-spacing:.1em; text-transform:uppercase; color:var(--slate); }

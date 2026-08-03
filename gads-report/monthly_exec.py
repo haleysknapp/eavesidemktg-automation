@@ -258,8 +258,10 @@ def main():
   {table}
   {quality}
   {sitecard}
+  <div class="endgroup">
   {focus}
   {rh.brand_footer('A "lead" = a phone call or form submission from search ads, or a charged Local Services lead. Figures may restate slightly as late conversions land.')}
+  </div>
 </div><div id="tip"></div>{rh.TIP_JS}</body></html>"""
 
     os.makedirs(OUT_DIR, exist_ok=True)
