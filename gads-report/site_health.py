@@ -32,11 +32,26 @@ def check_pages():
     return rows
 
 def card(rh, title="Website status"):
+    """Compact by default: one line when everything is healthy; a table of ONLY the
+    problem pages when something is down, slow, or missing tracking."""
     rows = check_pages()
     if not rows:
         return ""
+    up = [r for r in rows if r["status"] == 200]
+    bad = [r for r in rows if r["status"] != 200]
+    no_track = [r for r in up if not r["tracking"]]
+    slow = [r for r in up if r["secs"] and r["secs"] > 4]
+    times = [r["secs"] for r in rows if r["secs"] is not None]
+    avg = sum(times) / len(times) if times else None
+    if not bad and not no_track and not slow:
+        line = (f"All {len(rows)} key pages up (homepage + market landing pages) · "
+                f"average load {avg:.1f}s · tracking verified on every page." if avg else
+                f"All {len(rows)} key pages up · tracking verified on every page.")
+        return (f'<div class="card"><h2>{rh.E(title)}</h2>'
+                f'<p style="margin:4px 0">{line}</p></div>')
     ok = lambda b: ('<span style="color:var(--goodtext);font-weight:600">OK</span>' if b
                     else '<span style="color:var(--crit);font-weight:600">CHECK</span>')
+    rows = bad + slow + no_track  # only the problems get a table row
     body = ""
     for r in rows:
         up = r["status"] == 200
@@ -47,8 +62,10 @@ def card(rh, title="Website status"):
                  f'<td class="num">{status_html}</td>'
                  f'<td class="num">{speed}{" ⚠" if slow else ""}</td>'
                  f'<td class="num">{ok(bool(r["tracking"])) if up else "—"}</td></tr>')
-    n_up = sum(1 for r in rows if r["status"] == 200)
-    sub = f'<div class="mut" style="margin-top:8px">{n_up}/{len(rows)} pages up · load time measured from data center · tracking = Google tag / call tracking detected</div>'
+    n_total = len(bad) + len(up)
+    sub = (f'<div class="mut" style="margin-top:8px">{len(up)}/{n_total} pages up'
+           + (f' · average load {avg:.1f}s' if avg else '')
+           + ' · only pages needing attention are listed above</div>')
     return (f'<div class="card"><h2>{rh.E(title)}</h2><table>'
             '<tr><th>Page</th><th class="num">Up</th><th class="num">Load</th><th class="num">Tracking</th></tr>'
             + body + "</table>" + sub + "</div>")
