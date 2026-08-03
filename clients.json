@@ -1,0 +1,54 @@
+{
+  "_readme": "Authoritative client registry. Which ad accounts belong to which client, which Discord channel gets which reports, and every per-client ID. Update this FIRST when onboarding.",
+  "manager_account": {
+    "owner": "Haley Knapp / Eaveside",
+    "google_ads_mcc": "968-076-3943",
+    "login_customer_id": "9680763943"
+  },
+  "clients": {
+    "roofing-force": {
+      "name": "Roofing Force",
+      "status": "production",
+      "google_ads_customer_id": "329-848-8566",
+      "lsa_accounts": {
+        "2344723790": "Fort Smith",
+        "7020216103": "Joplin",
+        "2664128737": "Olathe (rolls up under Kansas City in reports)",
+        "1830697125": "Wichita"
+      },
+      "market_aliases": { "Olathe": "Kansas City" },
+      "discord": {
+        "channel": "#roofing-force",
+        "channel_id": "1532909401525059727",
+        "reports": ["daily-pulse", "search-terms-mon-thu", "friday-weekly", "monthly-exec", "hourly-worker"]
+      },
+      "email": {
+        "to": ["cburnett@roofingforce.com", "rdavis@roofingforce.com", "gdavis@roofingforce.com"],
+        "cc": ["george@eaveside.com"],
+        "voice_file": "gads-report/email-voice.md",
+        "cpl_target_note": "< $160 blended CPL target; $200/channel ceiling per George's scale plan"
+      },
+      "website": {
+        "url": "https://roofingforce.com",
+        "gsc_property": "https://roofingforce.com/ (URL-prefix; access via Haley's Chrome, haley@eaveside.com)",
+        "monitored_pages": "gads-report/site-pages.txt",
+        "note": "New short-path market LPs (/kansas-city/ etc.) are intentionally noindexed ad pages"
+      },
+      "sheets": {
+        "daily_lead_audit": "19-hZ_E17SXPdbrDVrRy4-vKrNQdt1xiZVGgwKx-H23Y",
+        "gads_tracker": "16JYQWW_M9gD9VZqtdaJ1DROXVXnrAMIanbWaG3OAI0I",
+        "marketing_metrics": "1Eguf8HwR0wU9Q-DO_JF5ctDCebparkw3BgyvDMiYoLc"
+      },
+      "assets": {
+        "logo_repo": "gads-report/assets/rf-logo.png",
+        "logo_source": "Haley's Mac: Roofing Agency/Photos (RF)/Logo-01.png",
+        "brand_colors": { "red": "#d02028", "black": "#201820", "chart_light": ["#2569a3", "#d02028"], "chart_dark": ["#4f95d6", "#e2565e"] }
+      },
+      "content_files": {
+        "work_log": "gads-report/rf-work-log.md",
+        "focus": "gads-report/rf-focus.md"
+      },
+      "mac_folder": "/Users/haleyk/Documents/Haley Personal Hub/Roofing Agency"
+    }
+  }
+}
