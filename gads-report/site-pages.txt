@@ -1,0 +1,9 @@
+# Pages checked by site_health.py — 'Label|URL' per line. Add/remove freely.
+Homepage|https://roofingforce.com/
+Kansas City LP|https://roofingforce.com/kansas-city/
+St. Louis LP|https://roofingforce.com/st-louis/
+St. Louis storm LP|https://roofingforce.com/st-louis/storm-damage/
+Joplin LP|https://roofingforce.com/joplin/
+Fort Smith LP|https://roofingforce.com/fort-smith/
+Mena LP|https://roofingforce.com/mena/
+Wichita LP|https://roofingforce.com/wichita/
