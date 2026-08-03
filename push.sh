@@ -3,7 +3,7 @@
 set -e
 cd "$(dirname "$0")"
 CRED_FILE=""
-for c in "$HOME/gads-report/.env" "gads-report/.env" "../../gads-credentials.txt" "../gads-credentials.txt" "$HOME/gads-credentials.txt"; do
+for c in "/home/claude/gads-report/.env" "$HOME/gads-report/.env" "gads-report/.env" "../../gads-credentials.txt" "../gads-credentials.txt" "$HOME/gads-credentials.txt" "/home/claude/gads-credentials.txt"; do
   [ -f "$c" ] && grep -q '^github_token=' "$c" && CRED_FILE="$c" && break
 done
 [ -n "$CRED_FILE" ] || { echo "❌ github_token not found (checked gads-report/.env and gads-credentials.txt)"; exit 1; }
