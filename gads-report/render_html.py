@@ -186,10 +186,15 @@ TIP_JS = """
 
 def fmt_usd(x, dec=0): return f"${x:,.{dec}f}"
 
+# LSA accounts / campaigns that belong to a larger market roll up under it
+MARKET_ALIASES = {"Olathe": "Kansas City"}
+
 def merged_market_table(title, search_rows, lsa_rows):
     """One row per market: total leads + Search/LSA split columns, combined spend, blended CPL.
-    search_rows / lsa_rows: iterables of (market_name, leads, cost). Markets sharing a name merge;
-    a channel the market doesn't run shows an em dash rather than 0."""
+    search_rows / lsa_rows: iterables of (market_name, leads, cost). Markets sharing a name merge
+    (MARKET_ALIASES folds sub-markets in); a channel the market doesn't run shows an em dash."""
+    search_rows = [(MARKET_ALIASES.get(n, n), l, c) for n, l, c in search_rows]
+    lsa_rows = [(MARKET_ALIASES.get(n, n), l, c) for n, l, c in lsa_rows]
     m = {}
     def slot(name):
         return m.setdefault(name, {"s_leads": None, "s_cost": 0.0, "l_leads": None, "l_cost": 0.0})
