@@ -224,7 +224,7 @@ def main():
             "fields": [{"name": "Summary", "value": ("\n".join("• " + s for s in story))[:1024], "inline": False}],
             "footer": {"text": "Leadership-ready report attached — forward as is"},
         }
-        ok = dp.post(DISCORD_WEBHOOK, embed=embed, file_path=html_path)
+        ok = dp.post(DISCORD_WEBHOOK, embed=embed)
         print(f"[discord] {'posted OK' if ok else 'FAILED'}")
 
 if __name__ == "__main__":

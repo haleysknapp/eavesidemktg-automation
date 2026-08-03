@@ -212,6 +212,23 @@ def main():
         except Exception as e:
             print(f"[warn] lead_audit.json unreadable: {e}")
 
+    # organic search (GSC sidecar: out/gsc.json, written from Search Console via Chrome)
+    gsc_card = ""
+    gsc_path = os.path.join(OUT_DIR, "gsc.json")
+    if os.path.exists(gsc_path):
+        try:
+            import json as _json
+            g = _json.load(open(gsc_path))
+            if g.get("month") == mk and g.get("rows"):
+                gr = "".join(f'<tr><td><b>{E(r[0])}</b></td><td class="num">{E(str(r[1]))}</td>'
+                             f'<td class="num split">{E(str(r[2]))}</td></tr>' for r in g["rows"])
+                gnote = f'<div class="mut" style="margin-top:8px">{E(g["note"])}</div>' if g.get("note") else ""
+                gsc_card = (f'<div class="card"><h2>Organic search — {E(g.get("label", label))}</h2>'
+                            f'<table><tr><th>Metric</th><th class="num">{E(g.get("label", label))}</th>'
+                            f'<th class="num">{E(g.get("prev_label", "prior month"))}</th></tr>{gr}</table>{gnote}</div>')
+        except Exception as e:
+            print(f"[warn] gsc.json unreadable: {e}")
+
     sitecard = ""
     try:
         import site_health
@@ -257,6 +274,7 @@ def main():
   <div style="margin-top:16px">{charts}</div>
   {table}
   {quality}
+  {gsc_card}
   {sitecard}
   <div class="endgroup">
   {focus}
@@ -281,7 +299,7 @@ def main():
             "fields": [{"name": "Summary", "value": ("\n".join("• " + s for s in story))[:1024], "inline": False}],
             "footer": {"text": "Executive-ready report attached"},
         }
-        ok = dp.post(DISCORD_WEBHOOK, embed=embed, file_path=html_path)
+        ok = dp.post(DISCORD_WEBHOOK, embed=embed)
         print(f"[discord] {'posted OK' if ok else 'FAILED'}")
 
 if __name__ == "__main__":

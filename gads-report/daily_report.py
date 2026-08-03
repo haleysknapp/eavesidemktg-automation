@@ -247,7 +247,7 @@ def post_discord(run_date, camps, alerts, tot, html_path):
         ],
         "footer": {"text": "Full breakdown in the attached report"},
     }
-    return dp.post(DISCORD_WEBHOOK, embed=embed, file_path=html_path)
+    return dp.post(DISCORD_WEBHOOK, embed=embed)
 
 def main():
     no_discord = "--no-discord" in sys.argv

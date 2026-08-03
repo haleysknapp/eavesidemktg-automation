@@ -281,17 +281,17 @@ def main():
             "title": f"{ACCOUNT_NAME} — Search Terms · {today}",
             "color": dp.RED if proposals else dp.GREEN,
             "description": f"**{len(proposals)} proposed negatives** — {rh.fmt_usd(cut_cost)} spent, 0 leads · ranked by wasted spend",
-            "fields": ([{"name": "To approve", "value": "Reply **approve all**, **approve 1, 3**, or **all except 2** — I'll apply them campaign-level, confirm here, and log them. Full report attached.", "inline": False}]
+            "fields": ([{"name": "To approve", "value": "Reply **approve all**, **approve 1, 3**, or **all except 2** — I'll apply them campaign-level, confirm here, and log them.", "inline": False}]
                        if proposals else
-                       [{"name": "Nothing to cut", "value": "No junk above the spend bar this run 🎉 Full report attached.", "inline": False}]),
+                       [{"name": "Nothing to cut", "value": "No junk above the spend bar this run 🎉", "inline": False}]),
         }
-        # attach the proposals JSON too, so the live bot (running elsewhere) can
+        # attach the proposals JSON so the live bot (running elsewhere) can
         # map "approve 1, 3" to exact terms without sharing a filesystem
-        attachments = [html_path]
+        attachments = []
         pend = os.path.join(BASE_DIR, "state", "pending_negatives.json")
         if proposals and os.path.exists(pend):
             attachments.append(pend)
-        ok = dp.post(DISCORD_WEBHOOK, embed=embed, file_path=attachments, image_path=img_path)
+        ok = dp.post(DISCORD_WEBHOOK, embed=embed, file_path=attachments or None, image_path=img_path)
         print(f"[discord] {'posted OK' if ok else 'FAILED'}")
 
 if __name__ == "__main__":
