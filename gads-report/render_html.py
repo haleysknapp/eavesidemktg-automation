@@ -30,6 +30,10 @@ h1 { font-size:20px; font-weight:650; margin:0; }
 .mut { color:var(--muted); font-size:12px; }
 .card { background:var(--surface); border:1px solid var(--border); border-radius:10px;
   padding:16px 18px; margin-top:16px; }
+@media print {
+  .card, .tile, .chart, .charts > * { break-inside:avoid; page-break-inside:avoid; }
+  .tiles { break-inside:avoid; }
+}
 h2 { font-size:13px; font-weight:650; margin:0 0 10px; letter-spacing:.01em;
   text-transform:uppercase; color:var(--ink2); }
 /* stat tiles */

@@ -1,5 +1,6 @@
 #!/bin/bash
-# MKTG Bot live listener — one-shot installer (run on the Mac, from this folder)
+# MKTG Bot live listener — one-shot installer. Run from inside the repo:
+#   bash mktg-bot/install.sh
 set -e
 cd "$(dirname "$0")"
 mkdir -p logs
@@ -9,18 +10,23 @@ python3 -m venv .venv
 ./.venv/bin/pip -q install --upgrade pip
 ./.venv/bin/pip -q install "discord.py" google-ads requests
 
-echo "→ unpacking report scripts..."
-if [ -f ../gads-report-scripts.zip ]; then
-  unzip -oq ../gads-report-scripts.zip -d .
+echo "→ wiring report scripts..."
+if [ ! -d gads-report ] && [ -d ../gads-report ]; then
+  cp -R ../gads-report .
 fi
-[ -d gads-report ] || { echo "❌ gads-report folder missing and no ../gads-report-scripts.zip found"; exit 1; }
+[ -d gads-report ] || { echo "❌ gads-report folder not found"; exit 1; }
 
 echo "→ wiring credentials..."
-cp "../../gads-credentials.txt" gads-report/.env
+CREDS=""
+for p in "../../../gads-credentials.txt" "../../gads-credentials.txt"; do
+  [ -f "$p" ] && CREDS="$p" && break
+done
+[ -n "$CREDS" ] || { echo "❌ gads-credentials.txt not found in Roofing Agency folder"; exit 1; }
+cp "$CREDS" gads-report/.env
 
 echo "→ checking Claude Code CLI..."
 command -v claude >/dev/null 2>&1 || {
-  echo "❌ 'claude' command not found. Install Claude Code first (https://claude.com/claude-code), then re-run this script.";
+  echo "❌ 'claude' command not found. Install Claude Code first (https://claude.com/claude-code), then re-run.";
   exit 1;
 }
 

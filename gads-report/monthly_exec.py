@@ -201,8 +201,29 @@ def main():
             if m2 and str(m_start) <= m2.group(1) <= str(m_end):
                 items.append(m2.group(2).strip())
         if items:
-            beyond = ('<div class="card"><h2>Beyond paid media — ' + E(label) + '</h2>' +
+            beyond = ('<div class="card"><h2>Initiatives — ' + E(label) + '</h2>' +
                       "".join(f'<p style="margin:6px 0">• {E(i)}</p>' for i in items) + "</div>")
+
+    # focus & targets for the upcoming month (rf-focus.md, "## YYYY-MM" sections)
+    focus = ""
+    ny, nm = (ry + 1, 1) if rm == 12 else (ry, rm + 1)
+    nk = f"{ny:04d}-{nm:02d}"
+    next_label = date(ny, nm, 1).strftime("%B %Y")
+    focus_path = os.path.join(BASE_DIR, "rf-focus.md")
+    if os.path.exists(focus_path):
+        import re as _re
+        items, active = [], False
+        for line in open(focus_path):
+            s = line.strip()
+            h = _re.match(r"##\s*(\d{4}-\d{2})", s)
+            if h:
+                active = (h.group(1) == nk)
+                continue
+            if active and _re.match(r"[-*]\s+", s):
+                items.append(_re.sub(r"^[-*]\s+", "", s))
+        if items:
+            focus = ('<div class="card"><h2>Focus &amp; targets — ' + E(next_label) + '</h2>' +
+                     "".join(f'<p style="margin:6px 0">• {E(i)}</p>' for i in items) + "</div>")
 
     narrative = '<div class="card"><h2>The month in brief</h2>' + \
                 "".join(f'<p style="margin:8px 0">{E(s)}</p>' for s in story) + "</div>"
@@ -221,6 +242,7 @@ def main():
   {yoy_html}
   <div style="margin-top:16px">{charts}</div>
   {table}
+  {focus}
   <div class="mut" style="margin-top:20px">A "lead" = a phone call or form submission from search ads, or a charged
     Local Services lead. Figures may restate slightly as late conversions land.</div>
 </div><div id="tip"></div>{rh.TIP_JS}</body></html>"""
