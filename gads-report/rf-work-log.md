@@ -10,5 +10,7 @@ Format (keep it exactly like this so the reports can parse it):
 
 ## Log
 
-- 2026-07-31: New dedicated landing pages went live (offer-led, built to lift ad quality and lower cost per click), starting with St. Louis.
-- 2026-07-31: Automated daily/weekly/monthly Google Ads + LSA reporting stood up (daily pulse, Monday search-terms sweep, Friday + monthly leadership reports).
+- 2026-07-25: Google Ads account cleanup — campaigns rebuilt into a clean, scalable structure with tightened keywords and verified conversion tracking.
+- 2026-07-28: Automated wasted-spend detection now live — every search term is reviewed and junk searches are blocked before they burn budget.
+- 2026-07-31: New dedicated market landing pages went live (offer-led; St. Louis first) to lift ad quality and lower cost per click.
+- 2026-07-31: Website rebuild moved into its final stretch — new site is close to launch.
