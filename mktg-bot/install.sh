@@ -8,7 +8,7 @@ mkdir -p logs
 echo "→ setting up python environment..."
 python3 -m venv .venv
 ./.venv/bin/pip -q install --upgrade pip
-./.venv/bin/pip -q install "discord.py" google-ads requests
+./.venv/bin/pip -q install "discord.py" google-ads requests certifi
 
 echo "→ wiring report scripts..."
 if [ ! -d gads-report ] && [ -d ../gads-report ]; then

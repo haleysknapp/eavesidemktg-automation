@@ -12,6 +12,16 @@ Messages sent while the Mac was asleep are processed on wake (backfill since
 the last handled message id). One Claude session runs at a time.
 """
 import os, sys, json, asyncio, subprocess, time
+
+# macOS Python often ships without SSL root certificates wired up, which makes
+# every connection to discord.com fail with CERTIFICATE_VERIFY_FAILED. Point the
+# ssl module at certifi's CA bundle before discord/aiohttp create any contexts.
+try:
+    import certifi
+    os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+except ImportError:
+    pass
+
 import discord
 
 BASE = os.path.dirname(os.path.abspath(__file__))
