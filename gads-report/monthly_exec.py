@@ -63,51 +63,6 @@ def main():
             ads_camp_m[r.campaign.name]["cost"] += cost
             ads_camp_m[r.campaign.name]["conv"] += conv
 
-    # ---- ads intel: impression share, conversion types, top converting terms ----
-    q_is = f"""
-      SELECT campaign.name, metrics.search_impression_share,
-             metrics.search_rank_lost_impression_share, metrics.search_budget_lost_impression_share,
-             metrics.cost_micros
-      FROM campaign WHERE segments.date BETWEEN '{m_start}' AND '{m_end}'
-    """
-    is_rows = []
-    try:
-        for r in svc.search(customer_id=CUSTOMER_ID, query=q_is):
-            if money(r.metrics.cost_micros) < 1: continue
-            is_rows.append({"name": r.campaign.name,
-                            "is": r.metrics.search_impression_share,
-                            "rank": r.metrics.search_rank_lost_impression_share,
-                            "budget": r.metrics.search_budget_lost_impression_share})
-    except Exception as e:
-        print(f"[warn] impression share query failed: {e}")
-
-    conv_types = defaultdict(float)
-    try:
-        q_ct = f"""
-          SELECT segments.conversion_action_name, metrics.conversions
-          FROM campaign WHERE segments.date BETWEEN '{m_start}' AND '{m_end}'
-        """
-        for r in svc.search(customer_id=CUSTOMER_ID, query=q_ct):
-            nm = r.segments.conversion_action_name.lower()
-            kind = "Calls" if "call" in nm else ("Forms" if ("form" in nm or "submit" in nm or "quote" in nm) else "Other")
-            conv_types[kind] += r.metrics.conversions
-    except Exception as e:
-        print(f"[warn] conversion type query failed: {e}")
-
-    top_terms = []
-    try:
-        q_tt = f"""
-          SELECT search_term_view.search_term, metrics.conversions, metrics.cost_micros
-          FROM search_term_view WHERE segments.date BETWEEN '{m_start}' AND '{m_end}'
-            AND metrics.conversions > 0
-          ORDER BY metrics.conversions DESC LIMIT 8
-        """
-        for r in svc.search(customer_id=CUSTOMER_ID, query=q_tt):
-            top_terms.append((r.search_term_view.search_term, r.metrics.conversions,
-                              money(r.metrics.cost_micros)))
-    except Exception as e:
-        print(f"[warn] search term query failed: {e}")
-
     # ---- lsa: 13 months ----
     lsa_data = fetch_lsa(client, hist_start, m_end)
     lsa_monthly = defaultdict(lambda: {"cost": 0.0, "leads": 0})
@@ -169,9 +124,12 @@ def main():
                                 f"{rh.fmt_usd(M['cpl'])} now vs {rh.fmt_usd(Y['cpl'])} then.")
                 else:
                     cpl_line = f" Cost per lead: {rh.fmt_usd(M['cpl'])} now vs {rh.fmt_usd(Y['cpl'])} then."
-            yoy_note = (f"Context for the year-over-year comparison: {date(yy,ym,1).strftime('%B %Y')} spend ran through "
-                        f"storm-surge campaigns and Performance Max, which have since been retired in favor of the current "
-                        f"always-on search structure — so total volume isn't an apples-to-apples comparison.{cpl_line}")
+            ratio = Y["cost"] / M["cost"] if M["cost"] else 0
+            yoy_note = (f"Context for the year-over-year comparison: {date(yy,ym,1).strftime('%B %Y')} ran at roughly "
+                        f"{ratio:.1f}× today's ad budget. Spend was then throttled down sharply over the following months, "
+                        f"and Eaveside inherited the account near its low point — so total volume isn't an apples-to-apples "
+                        f"comparison. The current program is rebuilding spend from that base, with structures built to hold "
+                        f"efficiency as budgets scale back up.{cpl_line}")
         def yrow(lab, t):
             return (f"<tr><td><b>{lab}</b></td><td class=num>{t['leads']:.0f}</td>"
                     f"<td class=num>{rh.fmt_usd(t['cost'])}</td>"
@@ -237,42 +195,7 @@ def main():
             beyond = ('<div class="card"><h2>Initiatives — ' + E(label) + '</h2>' +
                       "".join(f'<p style="margin:6px 0">• {E(i)}</p>' for i in items) + "</div>")
 
-    # ---- new sections: headroom, lead arrival, lead quality (audited), site health ----
-    headroom = ""
-    if is_rows:
-        hr = ""
-        for r in sorted(is_rows, key=lambda x: -(x["rank"] or 0)):
-            nm = market_name(r["name"])
-            fmtp = lambda v: f"{v*100:.0f}%" if v is not None and v == v else "—"
-            hr += (f'<tr><td><b>{E(nm)}</b></td>'
-                   f'<td class="num">{fmtp(r["is"])}</td>'
-                   f'<td class="num">{fmtp(r["rank"])}</td>'
-                   f'<td class="num">{fmtp(r["budget"])}</td></tr>')
-        headroom = (f'<div class="card"><h2>Search headroom by market — {E(label)}</h2><table>'
-                    '<tr><th>Market</th><th class="num">Impression share</th>'
-                    '<th class="num">Missed — ad rank</th><th class="num">Missed — budget</th></tr>'
-                    + hr + '</table><div class="mut" style="margin-top:8px">Impression share = how often our ads '
-                    'showed when they could have. "Missed" = demand that was there but we didn\'t show for — '
-                    'rank-limited markets have room to grow without more budget risk; budget-limited ones need spend.</div></div>')
-
-    arrival = ""
-    if conv_types or top_terms:
-        ct = ""
-        total_ct = sum(conv_types.values()) or 1
-        for kind in ("Calls", "Forms", "Other"):
-            if conv_types.get(kind):
-                ct += (f'<tr><td><b>{kind}</b></td><td class="num">{conv_types[kind]:.0f}</td>'
-                       f'<td class="num">{conv_types[kind]/total_ct*100:.0f}%</td></tr>')
-        ct_html = (f'<table><tr><th>Lead type</th><th class="num">Leads</th><th class="num">Share</th></tr>{ct}</table>'
-                   if ct else "")
-        tt_html = ""
-        if top_terms:
-            tt = "".join(f'<tr><td>"{E(t)}"</td><td class="num">{c:.0f}</td><td class="num">{rh.fmt_usd(cost)}</td></tr>'
-                         for t, c, cost in top_terms)
-            tt_html = (f'<div style="margin-top:14px"><table><tr><th>Top converting searches</th>'
-                       f'<th class="num">Leads</th><th class="num">Spent</th></tr>{tt}</table></div>')
-        arrival = f'<div class="card"><h2>How search leads arrived — {E(label)}</h2>{ct_html}{tt_html}</div>'
-
+    # ---- new sections: lead quality (audited), site health ----
     quality = ""
     audit_path = os.path.join(OUT_DIR, "lead_audit.json")
     if os.path.exists(audit_path):
@@ -333,8 +256,6 @@ def main():
   {yoy_html}
   <div style="margin-top:16px">{charts}</div>
   {table}
-  {headroom}
-  {arrival}
   {quality}
   {sitecard}
   {focus}
