@@ -10,8 +10,8 @@ Update it any month by telling Claude (or the Discord bot) what next month's foc
 
 ## 2026-08
 
-- Scale ad spend: opening up bidding, with a close eye on spend and negative search terms — AI Max running on a few campaigns.
-- New landing pages are live to help ad quality and lower cost per click.
-- Clean lead tracking and reporting for the team.
-- Finish the website rebuild — it's close.
-- Meta: content is filmed — next step is getting ads live in the Meta account.
+- The August goal: more lead volume. Two levers — scaling spend back up in the Google Search campaigns, and getting Meta live.
+- Google Search: opening up bidding to buy more auctions, with a close eye on spend and negative search terms; AI Max running on select campaigns.
+- Meta: ad content is filmed — next step is ads live in the account, ramping as lead quality holds.
+- The guardrail: grow spend week by week only where cost per lead holds under the $200-per-channel ceiling — aiming to at least double July's lead volume by month-end.
+- Also in motion: clean lead tracking and reporting for the team, and finishing the website rebuild.

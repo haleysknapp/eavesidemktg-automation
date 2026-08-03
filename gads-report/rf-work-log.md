@@ -10,5 +10,5 @@ Format (keep it exactly like this so the reports can parse it):
 
 ## Log
 
-- 2026-07-31: New dedicated St. Louis landing pages went live (offer-led, built for the rebuilt search campaigns).
+- 2026-07-31: New dedicated landing pages went live (offer-led, built to lift ad quality and lower cost per click), starting with St. Louis.
 - 2026-07-31: Automated daily/weekly/monthly Google Ads + LSA reporting stood up (daily pulse, Monday search-terms sweep, Friday + monthly leadership reports).
