@@ -106,9 +106,12 @@ h1 { font-size:34px; font-weight:800; letter-spacing:-.02em; margin:2px 0 4px; }
 .card { background:var(--surface); border:1px solid var(--border); border-radius:14px;
   padding:18px 20px; margin-top:16px; box-shadow:var(--shadow); }
 @media print {
+  .viz-root { --page:#ffffff; --shadow:none; }
+  body { background:#ffffff; }
   .card, .tile, .chart, .charts > * { break-inside:avoid; page-break-inside:avoid; }
   .tiles { break-inside:avoid; }
-  .wrap { padding-top:16px; }
+  .card, .tile { border-color:rgba(22,24,29,.16); }
+  .wrap { padding-top:8px; }
 }
 h2 { display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:700; margin:0 0 12px;
   letter-spacing:.1em; text-transform:uppercase; color:var(--slate); }

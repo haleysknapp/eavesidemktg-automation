@@ -10,8 +10,8 @@ Update it any month by telling Claude (or the Discord bot) what next month's foc
 
 ## 2026-08
 
-- Scale St. Louis on the new dedicated landing pages — prove the ~$63 cost-per-lead holds as spend ramps.
-- Keep search terms tight under Google's new AI Max matching: twice-weekly wasted-spend sweeps, with negatives applied within days instead of months.
-- Make the Wichita call — rework the campaign or move that budget to markets that convert.
-- Google Business Profile review push: read out the Joplin test, then roll to Kansas City and Fort Smith if it's working.
-- Target: hold blended cost per lead at or under ~$125 while lead volume grows.
+- St. Louis: hold the new build steady and open up bidding so ads enter more auctions — the campaign has the budget, it needs auction entry. Target: lift impression share from ~20% toward 50%+, supporting $300–500/day at the $150–200 cost-per-lead history supports.
+- Joplin: raise daily budget $350 → $500 — the one market where budget (not rank) is the limiter, with a proven $156–184 cost per lead.
+- Kansas City: continue the planned bid-target ladder (next step ~Aug 8) to scale spend while holding efficiency; Fort Smith and Mena take their steps later in August.
+- Storm-ready: St. Louis storm ads and pages are built and waiting — budget surges when a hail event hits, on top of the always-on baseline.
+- The month's goal: rebuild total spend toward last summer's levels without relying on storm campaigns, holding blended cost per lead under the $160 target.
