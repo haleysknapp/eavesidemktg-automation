@@ -1,0 +1,16 @@
+# Local competitor roofing companies — one per line, case-insensitive substring match.
+# Cut at $60+ spend across 3+ weeks with no leads. Edit freely (tell Claude to add names).
+erie home
+erie roofing
+powerdry
+ateam construction
+a team construction
+camden roof
+emmendorfer
+next gen restoration
+your neighborhood roofer
+winchoice
+allstate roofing
+versacon
+ragsdale roofing
+roden roofing
