@@ -11,11 +11,19 @@
   <key>WorkingDirectory</key><string>__DIR__</string>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
+  <!-- Minimum seconds between respawns. Without this, a crash on startup (e.g.
+       no network on wake) respawns instantly and launchd loops — 364 restarts
+       on 2026-08-03. 30s makes a bad loop cheap and obvious instead of silent. -->
+  <key>ThrottleInterval</key><integer>30</integer>
   <key>StandardOutPath</key><string>__DIR__/logs/listener.log</string>
   <key>StandardErrorPath</key><string>__DIR__/logs/listener.err</string>
   <key>EnvironmentVariables</key>
   <dict>
     <key>PATH</key><string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+    <!-- Model used for every headless `claude -p` this bot spawns. This work is
+         script execution, not reasoning — it does not need a frontier model.
+         Change to "haiku" to cut further, or "opus" to restore the old behavior. -->
+    <key>MKTG_BOT_MODEL</key><string>sonnet</string>
   </dict>
 </dict>
 </plist>
