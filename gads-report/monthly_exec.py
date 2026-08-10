@@ -16,6 +16,7 @@ from config import google_ads_client, CUSTOMER_ID, ACCOUNT_NAME, DISCORD_WEBHOOK
 from lsa import fetch_lsa, LSA_ACCOUNTS
 import render_html as rh
 import discord_post as dp
+import basis_notes
 
 TZ = ZoneInfo("America/Denver")
 OUT_DIR = os.path.join(BASE_DIR, "out")
@@ -171,6 +172,15 @@ def main():
                             lambda v: f"{v:g}", lambda d, v: f"<b>{d.strip()}</b><br>{v:g} leads") +
               rh._bar_chart("Total monthly ad spend — last 13 months", mlabels, spend_series, "var(--s1)",
                             lambda v: f"${v:,.0f}", lambda d, v: f"<b>{d.strip()}</b><br>{rh.fmt_usd(v)}") + '</div>')
+
+    # Counting-basis guard — flag any month in the 13-month trend that spans a
+    # change in how leads are counted (see basis_notes.py).
+    _mflags = basis_notes.flagged_months(months_sorted)
+    if _mflags:
+        _names = ", ".join(datetime.strptime(m, "%Y-%m").strftime("%b %Y") for m in sorted(_mflags))
+        charts += (f'<p class="mut" style="margin:6px 2px 0;font-size:12px">'
+                   f'{E(_names)} spans a change in how leads are counted. '
+                   f'{E(basis_notes.CHANGES[0]["note"])}</p>')
 
     def market_name(name):
         for suf in (" New Search", " - Search", " Search"):

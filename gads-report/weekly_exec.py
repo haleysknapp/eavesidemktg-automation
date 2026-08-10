@@ -16,6 +16,7 @@ from config import google_ads_client, CUSTOMER_ID, ACCOUNT_NAME, DISCORD_WEBHOOK
 from lsa import fetch_lsa, window as lsa_window
 import render_html as rh
 import discord_post as dp
+import basis_notes
 
 TZ = ZoneInfo("America/Denver")
 OUT_DIR = os.path.join(BASE_DIR, "out")
@@ -136,6 +137,12 @@ def main():
     if dead_lsa:
         story.append("Local Services in " + ", ".join(dead_lsa) + " isn't serving (no spend for 2+ weeks) — profile/verification being checked.")
 
+    # Counting-basis guard: if this week vs last week straddles a change in how
+    # leads are counted, say so instead of reporting the artefact as a real drop.
+    basis_wk = basis_notes.client_note(pw_start, d_end, prefix="")
+    if basis_wk:
+        story.append(basis_wk + " The like-for-like comparison is the one to use.")
+
     # ---- render ----
     E = rh.E
     tiles = f"""
@@ -169,6 +176,11 @@ def main():
               rh._bar_chart(f"Total weekly ad spend — last {TREND_WEEKS} weeks", weeks_sorted, spend_series, "var(--s1)",
                             lambda v: f"${v:,.0f}", lambda d, v: f"<b>week ending {d}</b><br>{rh.fmt_usd(v)}") +
               '</div>')
+
+    # Footnote under the 8-week trend for any bucket that spans a basis change.
+    trend_fn = basis_notes.trend_footnote(weeks_sorted)
+    if trend_fn:
+        charts += (f'<p class="mut" style="margin:6px 2px 0;font-size:12px">{E(trend_fn)}</p>')
 
     table = rh.merged_market_table(
         "By market (this week)",
@@ -213,6 +225,9 @@ def main():
     print(f"TOTAL: {tot_wk['leads']:.0f} leads · {rh.fmt_usd(tot_wk['cost'])} spend · CPL {rh.fmt_usd(cpl)} "
           f"(ads {ads_wk['conv']:.0f}@{rh.fmt_usd(ads_cpl)} + LSA {lsa_wk['leads']}@{rh.fmt_usd(lsa_cpl)})")
     for s in story: print("·", s)
+    _internal = basis_notes.internal_note(pw_start, d_end)
+    if _internal:
+        print(f"[BASIS] {_internal}")
     print(f"[saved] {html_path}")
 
     if not no_discord:
