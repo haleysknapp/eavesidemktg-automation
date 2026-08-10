@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": "2026-08-10-wichita-launch",
+    "created": "2026-08-10T00:00:00Z",
+    "requested_by": "Haley",
+    "needs": "live-session",
+    "title": "Enable Wichita campaign and verify conversion tracking",
+    "spec": "Roofing Force Google Ads account 329-848-8566. Campaign 'Wichita New Search' is PAUSED with $200/day budget set. Last ran July 12-24 with erratic pacing (some $0-spend days while showing impressions -- may have been manually toggled). Spent $185 total, 16 clicks, 0 leads in L30D. Zero leads on 16 clicks is suspicious -- likely a tracking issue OR just too thin a sample. Other active markets running $126-157 CPL for reference. Steps: (1) Open the campaign in Google Ads UI and verify it looks structurally sound (ads approved, geo targeting set to Wichita metro, bid strategy appropriate). (2) Check conversion tracking -- fire a test lead from the Wichita landing page and confirm it registers in Google Ads. If tracking is broken, fix before enabling. (3) If tracking looks good, enable the campaign. (4) Set a calendar reminder to check pacing and leads after 7 days. Budget of $200/day is reasonable -- benchmark CPL would put it at 40+ leads/mo if it performs like other markets.",
+    "source_message": "I would like to get wichita live if we can spend at a pace that makes sense and drives leads can you look at that"
+  }
+]
