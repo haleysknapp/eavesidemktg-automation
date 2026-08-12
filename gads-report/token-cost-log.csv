@@ -1,0 +1,2 @@
+date,label,model,turns,usd,usd_per_turn,cache_write_tok,cache_read_tok,output_tok,avg_ctx_tok,peak_ctx_tok,transcript
+2026-08-10,This session (baseline: research + conversation),opus5,59,11.2841,0.1913,677747,5346089,73318,102100,148493,b8da0e8c-07e7-57fe-9a82-efb7d78b6f0b.jsonl

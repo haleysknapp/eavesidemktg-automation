@@ -1,15 +1,38 @@
 {
-  "_readme": "Authoritative client registry. Which ad accounts belong to which client, which Discord channel gets which reports, and every per-client ID. Update this FIRST when onboarding.",
+  "_readme": "Authoritative client registry. Which ad accounts belong to which client, which Discord channel gets which reports, and every per-client ID. Update this FIRST when onboarding. NOTE 2026-08-10: this file is currently documentation only - no Python reads it. Wiring it into config.py/lsa.py/render_html.py/listener.py is the prerequisite for real multi-client support. See SYSTEM.md section 10.",
+  "_last_reconciled": "2026-08-10 (context consolidation)",
   "manager_account": {
     "owner": "Haley Knapp / Eaveside",
     "google_ads_mcc": "968-076-3943",
     "login_customer_id": "9680763943"
+  },
+  "google_accounts": {
+    "_note": "The automation is split across two Google accounts and both display the name 'Haley Knapp'. Always check both. Only Owner='Me' is reliable in the Apps Script UI.",
+    "haley@eaveside.com": {
+      "script_google_index": "/u/0/",
+      "owns": ["Google Ads MCC + client accounts", "RF GADS sheet", "Apps Script project 'Call Tracking' (the call grader)", "Apps Script 'Site Leads'", "Apps Script 'LSA Lead Tracker'", "the three new RF workbooks"]
+    },
+    "haleysknapp@gmail.com": {
+      "script_google_index": "/u/1/",
+      "owns": ["Apps Script project 'RF Webhooks' (7 daily triggers, all AccuLynx/LSA/webhook sync)", "Apps Script 'RF Chat Leads'", "Marketing Metrics sheet"],
+      "warning": "Live secrets (ACCULYNX_API_KEY, GADS_*, WEBHOOK_KEY) sit in Script Properties on this personal account rather than the agency one."
+    }
   },
   "clients": {
     "roofing-force": {
       "name": "Roofing Force",
       "status": "production",
       "google_ads_customer_id": "329-848-8566",
+      "campaigns": {
+        "enabled": {
+          "22284561281": "Kansas City",
+          "14592215201": "St. Louis",
+          "22307503910": "Fort Smith",
+          "22311207505": "Joplin",
+          "22311255805": "Mena"
+        },
+        "paused": { "23799169822": "Wichita (paused 2026-07-23, zero leads at spend; revive-or-exit decision open)" }
+      },
       "lsa_accounts": {
         "2344723790": "Fort Smith",
         "7020216103": "Joplin",
@@ -17,31 +40,74 @@
         "1830697125": "Wichita"
       },
       "market_aliases": { "Olathe": "Kansas City" },
+      "not_bidding_but_winning_work": {
+        "_note": "24-month AccuLynx footprint shows real won work with zero ad spend. Largest unexploited finding as of 2026-08-10.",
+        "Topeka": "52 jobs / $809K / 43.6mi p90",
+        "Springfield": "36 jobs / $532K / 24.9mi p90"
+      },
+      "call_tracking": {
+        "provider": "CallTrackingMetrics",
+        "account": "425821",
+        "numbers": {
+          "master_forward": "(913) 393-3008",
+          "Kansas City": "(913) 270-5440",
+          "Joplin": "(417) 222-3565",
+          "Fort Smith": "(479) 437-0171",
+          "St. Louis": "(314) 207-6227",
+          "Mena": "(479) 437-0111",
+          "Meta": "(913) 298-6116",
+          "Meta swap (new)": "(913) 565-4470",
+          "Wichita": "NONE - no CTM number exists for this market"
+        },
+        "google_ads_conversion_action": "6481109006 Call Tracking Lead",
+        "note": "Calls from ads was demoted Primary->Secondary 2026-07-31 and that was CORRECT. Do not reverse. Possible Jul 20 - Aug 2 double-count is an open audit item."
+      },
+      "crm": {
+        "current": "AccuLynx",
+        "planned_replacement": "EaveSide CRM (EaveSide/roof-estimate-crm, companyId a64c8e61-65a3-473b-91de-1b3a86e6ec13)",
+        "migration_status": "DECIDED 2026-06-26, DEFERRED 2026-07-12, NOT EXECUTED. See SOURCE-MAP.md section 11 for every flow that must be rebuilt or retired at cutover."
+      },
       "discord": {
         "channel": "#roofing-force",
         "channel_id": "1532909401525059727",
-        "reports": ["daily-pulse", "search-terms-mon-thu", "friday-weekly", "monthly-exec", "hourly-worker"]
+        "reports": ["gads-report-mon-thu", "search-terms-mon-thu", "friday-weekly", "monthly-exec", "hourly-worker"]
       },
       "email": {
         "to": ["cburnett@roofingforce.com", "rdavis@roofingforce.com", "gdavis@roofingforce.com"],
         "cc": ["george@eaveside.com"],
         "voice_file": "gads-report/email-voice.md",
-        "cpl_target_note": "< $160 blended CPL target; $200/channel ceiling per George's scale plan"
+        "cpl_target_note": "< $160 blended CPL target; $200/channel ceiling per George's scale plan",
+        "attachment_rule": "Rick Davis (rdavis@) CANNOT open HTML attachments. Client-facing reports must be PDF."
+      },
+      "contacts": {
+        "cburnett@roofingforce.com": "Chad Burnett - CMO oversight",
+        "rdavis@roofingforce.com": "Rick Davis",
+        "gdavis@roofingforce.com": "George Davis",
+        "tneal@roofingforce.com": "Teresa Neal - chat leads forward here",
+        "other": "Jade Lowe = office/social"
       },
       "website": {
         "url": "https://roofingforce.com",
         "gsc_property": "https://roofingforce.com/ (URL-prefix; access via Haley's Chrome, haley@eaveside.com)",
         "monitored_pages": "gads-report/site-pages.txt",
-        "note": "New short-path market LPs (/kansas-city/ etc.) are intentionally noindexed ad pages"
+        "ga4_property": "148936557",
+        "note": "Short-path market LPs (/kansas-city/ etc.) are intentionally noindexed, unlinked, ad-click-only. Their hardcoded Google Ads phone numbers are BY DESIGN for robust attribution. Never flag as a bug. Closed in Change Log 2026-08-03."
       },
       "sheets": {
-        "daily_lead_audit": "19-hZ_E17SXPdbrDVrRy4-vKrNQdt1xiZVGgwKx-H23Y",
+        "marketing_metrics": "1Eguf8HwR0wU9Q-DO_JF5ctDCebparkw3BgyvDMiYoLc",
+        "internal_master": "14AWd_L3XQJehp-Grx0_-Tu9U0OpF8qHUlnY1GKYkpNE",
+        "marketing_playbook": "1Y7Y-phDWz_cPGmKy0MQkJERTaUX7L9v4d6_HfKk0Wrk",
+        "content_library": "10b0rzM1F0Nde8gHMa7CJK2hykGC9pzfxz3tE4uieO_c",
         "gads_tracker": "16JYQWW_M9gD9VZqtdaJ1DROXVXnrAMIanbWaG3OAI0I",
-        "marketing_metrics": "1Eguf8HwR0wU9Q-DO_JF5ctDCebparkw3BgyvDMiYoLc"
+        "daily_lead_audit": "19-hZ_E17SXPdbrDVrRy4-vKrNQdt1xiZVGgwKx-H23Y",
+        "playbook_review_george": "15UOO-MR-jvHo12_jo92PQXdhsX7OvYc2Yx4MBd40Tyk",
+        "_note": "Roles per SHEETS-PLAN.md: marketing_metrics = the engine (Apps Script writes here); internal_master = ops only; playbook + content_library = client-facing; gads_tracker and daily_lead_audit are being folded in and retired."
       },
       "assets": {
         "logo_repo": "gads-report/assets/rf-logo.png",
         "logo_source": "Haley's Mac: Roofing Agency/Photos (RF)/Logo-01.png",
+        "photos": "Roofing Agency/Photos (RF)/ - 34 files",
+        "static_ads": "Meta Creative Engine/output/roofing-force/2026-08-07-matrix/ - 20 ads, 60 JPEGs, RF-ads-copy.csv",
         "brand_colors": { "red": "#d02028", "black": "#201820", "chart_light": ["#2569a3", "#d02028"], "chart_dark": ["#4f95d6", "#e2565e"] }
       },
       "content_files": {
@@ -49,6 +115,37 @@
         "focus": "gads-report/rf-focus.md"
       },
       "mac_folder": "/Users/haleyk/Documents/Haley Personal Hub/Roofing Agency"
+    },
+    "copper-ridge-exteriors": {
+      "name": "Copper Ridge Exteriors",
+      "status": "active - onboarding",
+      "contact": "Bryce",
+      "milestone": "Meta launch target 2026-08-27",
+      "sheets": {
+        "content_library": "1UmiCLxnsTMILpNrT_sray9mazJjAQJ9jNcf4s4PzUfs"
+      },
+      "artifacts": ["copper-ridge-checklist (Cowork artifact: 4 items Haley, 5 Bryce homework, 11 Claude)"],
+      "mac_folder": "/Users/haleyk/Documents/Haley Personal Hub/Roofing Agency/Copper Ridge Exteriors",
+      "_todo": "No Discord channel, no scheduled tasks, no Google Ads link yet. Gets the clean workbook set per SHEETS-PLAN.md section 6."
+    },
+    "final-touch-roofs": {
+      "name": "Final Touch Roofs",
+      "status": "client workbook only",
+      "sheets": { "client_workbook": "1FACEC-oXC4jYKDRTPwUUpdVyBe9DSLJVOIcbWY69FhI" },
+      "note": "Has an 8th tab 'Bottoms-Up Model' not present in the master template - consider mirroring back.",
+      "mac_folder": "/Users/haleyk/Documents/Haley Personal Hub/Roofing Agency/Final Touch Roofs"
+    },
+    "definitive-construction": {
+      "name": "Definitive Construction",
+      "status": "prospect",
+      "contact": "Keaton Crockett",
+      "sheets": { "client_workbook": "1BZl-4LM0M7wjuKl30x_bRY7GzfksAzfSV_0sJWV1dxA" },
+      "mac_folder": "/Users/haleyk/Documents/Haley Personal Hub/Roofing Agency/Definitive Construction"
     }
+  },
+  "templates": {
+    "client_workbook_master": "1zBNQHATwzECJgHvpoOE_2geIoYvvvzOSuAkBA7iaEcA",
+    "_warning": "The master template carries client-specific dirt that propagates to every clone: 'jack groehnmim' in the Access & Assets LSA cell, and a webflow/companycam/jobnimbus note on the Website row. Scrub before cloning.",
+    "content_library_model": "1UmiCLxnsTMILpNrT_sray9mazJjAQJ9jNcf4s4PzUfs"
   }
 }
