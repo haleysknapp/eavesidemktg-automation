@@ -1,0 +1,15 @@
+{
+  "name": "ctm-capi-bridge",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Bridges CallTrackingMetrics call webhooks into the Meta Conversions API, replacing CTM's deprecated Offline Conversions integration.",
+  "scripts": {
+    "test": "node test/run-tests.mjs",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

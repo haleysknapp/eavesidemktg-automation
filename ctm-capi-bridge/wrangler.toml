@@ -1,0 +1,63 @@
+name = "ctm-capi-bridge"
+main = "src/worker.js"
+compatibility_date = "2026-08-01"
+
+# Non-secret config. Secrets (META_ACCESS_TOKEN, WEBHOOK_SECRET) are set with
+# `wrangler secret put` and never live in this file.
+[vars]
+PIXEL_ID = "1110006736001318"
+
+# Tracking numbers whose calls count as Facebook-attributed. Comma separated,
+# any format — they get normalized. Add the click-to-call number here later.
+FB_NUMBERS = "913-565-4470"
+
+# Fallback when the dialed number isn't listed above: CTM's source, web_source
+# and paid.source fields are each tested against this.
+FB_SOURCE_REGEX = "facebook|meta|fb"
+
+# Minimum talk seconds for an answered call — two numbers, not one.
+#
+# The tracking number forwards to Roofing Force's own line, so their voicemail
+# lives downstream of CTM. A human answering and an answering machine answering
+# are byte-identical in the payload (checked: ring_time, legs, agent, status,
+# left/right_talk_time all match). Time of day is the only signal available.
+#
+# IN HOURS — a person picks up, so every second is real conversation:
+#   "hi, I need an estimate" / "what's the address?" / "123 Main" = ~25s, real
+#   → 20s bar
+#
+# AFTER HOURS — voicemail answers, and the first ~27s is the outgoing greeting:
+#   beep-and-hangup        27 + 1..3 = 28-30s   <- must be excluded
+#   shortest real message  27 + 13   = 40s      <- must be included
+#   → 40s bar
+#
+# No single number can do both: the junk after-hours call (29s) is LONGER than
+# the real in-hours one (25s). That's why this splits on the clock.
+#
+# If the greeting length changes, MIN_DURATION_SEC_CLOSED = greeting + 13.
+MIN_DURATION_SEC_OPEN = "20"
+MIN_DURATION_SEC_CLOSED = "40"
+
+# When a human is actually there to pick up. Arkansas = Central. Evaluated with
+# real timezone rules, so daylight saving is handled rather than assumed.
+# Days are 0=Sun..6=Sat. END_HOUR is exclusive: 17 means the bar rises at 5:00pm.
+# Holidays are not modelled — those days will be judged as if staffed.
+BUSINESS_TZ = "America/Chicago"
+BUSINESS_DAYS = "1,2,3,4,5"
+BUSINESS_START_HOUR = "8"
+BUSINESS_END_HOUR = "17"
+
+# A missed call where the caller left a message still counts as a lead. This is
+# the minimum length of the message itself (total duration minus ring time) —
+# below this it's someone hanging up on the beep. Set COUNT_VOICEMAIL = "0" to
+# stop counting voicemails entirely.
+COUNT_VOICEMAIL = "1"
+VOICEMAIL_MIN_SEC = "10"
+
+# "1" echoes the CTM payload back instead of forwarding to Meta. Used once
+# during setup to confirm field names; should stay "0" now.
+DEBUG = "0"
+
+# Test passed 2026-08-10 (call 4411489535, events_received: 1), so the test
+# code is removed and events now count for real. To re-test later, put back:
+#   TEST_EVENT_CODE = "TESTxxxxx"
