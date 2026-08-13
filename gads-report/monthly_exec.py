@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """
 Roofing Force — monthly executive report (1st of the month, covers the prior month).
-Google Ads + LSA combined: month vs prior month, year-over-year with fair framing
-(efficiency-first when spend structure changed), 13-month trends, market breakdown.
+Google Ads + LSA + Meta (Facebook) combined: month vs prior month, year-over-year with
+fair framing (efficiency-first when spend structure changed), 13-month trends, market
+breakdown.
+
+Totals come from a channel list, not from hardcoded per-channel blocks — see the same
+note in weekly_exec.py. Blended cost per lead must include every live channel's spend.
 
 Usage: python3 monthly_exec.py [--no-discord]
 """
@@ -14,6 +18,7 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import google_ads_client, CUSTOMER_ID, ACCOUNT_NAME, DISCORD_WEBHOOK, BASE_DIR
 from lsa import fetch_lsa, LSA_ACCOUNTS
+import meta as meta_mod
 import render_html as rh
 import discord_post as dp
 import basis_notes
@@ -85,29 +90,54 @@ def main():
             if mo == mk: mrow["leads"] += 1
         lsa_market_m[name] = mrow
 
+    # ---- meta (facebook): same 13-month window ----
+    # Facebook-ATTRIBUTED results from Ads Manager. Never the pixel's raw Lead total,
+    # which also counts website form fills from every non-Facebook source.
+    meta_data = meta_mod.fetch_meta(hist_start, m_end)
+    meta_monthly = meta_mod.monthly_buckets(meta_data)
+    meta_market_m = {}
+    if meta_monthly.get(mk, {}).get("cost") or meta_monthly.get(mk, {}).get("leads"):
+        _mc = meta_mod.load_meta_config()
+        meta_market_m[_mc.get("_market", "Kansas City")] = dict(meta_monthly[mk])
+    meta_live = bool(meta_market_m)
+
     def tot(mo):
-        a, l = ads_monthly.get(mo, {"cost": 0, "conv": 0}), lsa_monthly.get(mo, {"cost": 0, "leads": 0})
-        leads = a["conv"] + l["leads"]; cost = a["cost"] + l["cost"]
+        a = ads_monthly.get(mo, {"cost": 0, "conv": 0})
+        l = lsa_monthly.get(mo, {"cost": 0, "leads": 0})
+        f = meta_monthly.get(mo, {"cost": 0, "leads": 0})
+        leads = a["conv"] + l["leads"] + f["leads"]
+        cost = a["cost"] + l["cost"] + f["cost"]
         return {"leads": leads, "cost": cost, "cpl": cost / leads if leads else 0,
-                "ads": a, "lsa": l}
+                "ads": a, "lsa": l, "meta": f}
     M, P, Y = tot(mk), tot(pk), tot(yk)
 
-    months_sorted = sorted(set(list(ads_monthly) + list(lsa_monthly)))
+    months_sorted = sorted(set(list(ads_monthly) + list(lsa_monthly) + list(meta_monthly)))
     months_sorted = [m for m in months_sorted if m <= mk][-13:]
-    lead_series = [ads_monthly.get(m, {}).get("conv", 0) + lsa_monthly.get(m, {}).get("leads", 0) for m in months_sorted]
-    spend_series = [ads_monthly.get(m, {}).get("cost", 0) + lsa_monthly.get(m, {}).get("cost", 0) for m in months_sorted]
+    lead_series = [ads_monthly.get(m, {}).get("conv", 0) + lsa_monthly.get(m, {}).get("leads", 0)
+                   + meta_monthly.get(m, {}).get("leads", 0) for m in months_sorted]
+    spend_series = [ads_monthly.get(m, {}).get("cost", 0) + lsa_monthly.get(m, {}).get("cost", 0)
+                    + meta_monthly.get(m, {}).get("cost", 0) for m in months_sorted]
     mlabels = [datetime.strptime(m, "%Y-%m").strftime("%b")[:3] + " " for m in months_sorted]
 
     # ---- narrative ----
     E = rh.E
     story = []
-    story.append(f"In {label}, Roofing Force generated {M['leads']:.0f} leads across Google Search ads and Local "
-                 f"Services Ads on {rh.fmt_usd(M['cost'])} of total ad spend — {rh.fmt_usd(M['cpl'])} per lead"
+    _across = ("Google Search ads, Local Services Ads and Facebook ads" if meta_live
+               else "Google Search ads and Local Services Ads")
+    story.append(f"In {label}, Roofing Force generated {M['leads']:.0f} leads across {_across}"
+                 f" on {rh.fmt_usd(M['cost'])} of total ad spend — {rh.fmt_usd(M['cpl'])} per lead"
                  + (f", vs {P['leads']:.0f} leads at {rh.fmt_usd(P['cpl'])} in {date(py,pm,1).strftime('%B')}." if P["leads"] else "."))
-    story.append(f"Search drove {M['ads']['conv']:.0f} leads at "
-                 f"{rh.fmt_usd(M['ads']['cost']/M['ads']['conv']) if M['ads']['conv'] else '—'} each; "
-                 f"Local Services added {M['lsa']['leads']} at "
-                 f"{rh.fmt_usd(M['lsa']['cost']/M['lsa']['leads']) if M['lsa']['leads'] else '—'} each.")
+    _split = (f"Search drove {M['ads']['conv']:.0f} leads at "
+              f"{rh.fmt_usd(M['ads']['cost']/M['ads']['conv']) if M['ads']['conv'] else '—'} each; "
+              f"Local Services added {M['lsa']['leads']} at "
+              f"{rh.fmt_usd(M['lsa']['cost']/M['lsa']['leads']) if M['lsa']['leads'] else '—'} each.")
+    if meta_live:
+        _split = _split[:-1] + (f"; Facebook added {M['meta']['leads']:.0f} at "
+                                f"{rh.fmt_usd(M['meta']['cost']/M['meta']['leads']) if M['meta']['leads'] else '—'} each.")
+    story.append(_split)
+    if meta_live:
+        story.append("Facebook numbers are the results Meta attributes to the ads in Ads Manager — "
+                     "not every form on the site, which fills from search and direct traffic too.")
     if P["cost"]:
         ds = (M["cost"] - P["cost"]) / P["cost"] * 100
         dl = (M["leads"] - P["leads"]) / P["leads"] * 100 if P["leads"] else 0
@@ -159,17 +189,32 @@ def main():
         <div>{rh._delta(M['cpl'], P['cpl'], up_good=False) if M['cpl'] and P['cpl'] else ''} <span class="mut">vs {date(py,pm,1).strftime('%B')} ({rh.fmt_usd(P['cpl']) if P['cpl'] else '—'})</span></div></div>
     </div>"""
 
-    chan = f"""<div class="card"><h2>By channel — {E(label)}</h2><table>
-      <tr><th>Channel</th><th class="num">Leads</th><th class="num">Spend</th><th class="num">Cost/lead</th></tr>
-      <tr><td><b>Google Search ads</b></td>
-        <td class="num">{M['ads']['conv']:.0f} <span class="mut">({date(py,pm,1).strftime('%b')}: {P['ads']['conv']:.0f})</span></td>
-        <td class="num">{rh.fmt_usd(M['ads']['cost'])} <span class="mut">({rh.fmt_usd(P['ads']['cost'])})</span></td>
-        <td class="num">{rh.fmt_usd(M['ads']['cost']/M['ads']['conv']) if M['ads']['conv'] else '—'}</td></tr>
-      <tr><td><b>Local Services Ads</b></td>
-        <td class="num">{M['lsa']['leads']} <span class="mut">({date(py,pm,1).strftime('%b')}: {P['lsa']['leads']})</span></td>
-        <td class="num">{rh.fmt_usd(M['lsa']['cost'])} <span class="mut">({rh.fmt_usd(P['lsa']['cost'])})</span></td>
-        <td class="num">{rh.fmt_usd(M['lsa']['cost']/M['lsa']['leads']) if M['lsa']['leads'] else '—'}</td></tr>
-    </table></div>"""
+    _pm = date(py, pm, 1).strftime('%b')
+    _mchans = [
+        {"label": "Google Search ads", "leads": M['ads']['conv'], "cost": M['ads']['cost'],
+         "p_leads": P['ads']['conv'], "p_cost": P['ads']['cost']},
+        {"label": "Local Services Ads", "leads": M['lsa']['leads'], "cost": M['lsa']['cost'],
+         "p_leads": P['lsa']['leads'], "p_cost": P['lsa']['cost']},
+    ]
+    if meta_live:
+        _mchans.append({"label": "Facebook ads", "leads": M['meta']['leads'], "cost": M['meta']['cost'],
+                        "p_leads": P['meta']['leads'], "p_cost": P['meta']['cost']})
+    _crows = ""
+    for _c in _mchans:
+        _ccpl = _c['cost'] / _c['leads'] if _c['leads'] else 0
+        _crows += (f"""      <tr><td><b>{E(_c['label'])}</b></td>
+        <td class="num">{_c['leads']:.0f} <span class="mut">({_pm}: {_c['p_leads']:.0f})</span></td>
+        <td class="num">{rh.fmt_usd(_c['cost'])} <span class="mut">({rh.fmt_usd(_c['p_cost'])})</span></td>
+        <td class="num">{rh.fmt_usd(_ccpl) if _ccpl else '—'}</td></tr>\n""")
+    _crows += (f"""      <tr style="border-top:2px solid var(--baseline)"><td><b>All channels</b></td>
+        <td class="num"><b>{M['leads']:.0f}</b> <span class="mut">({_pm}: {P['leads']:.0f})</span></td>
+        <td class="num"><b>{rh.fmt_usd(M['cost'])}</b> <span class="mut">({rh.fmt_usd(P['cost'])})</span></td>
+        <td class="num"><b>{rh.fmt_usd(M['cpl']) if M['cpl'] else '—'}</b></td></tr>\n""")
+    _cnote = (f'<p class="mut" style="margin:8px 2px 0;font-size:12px">{E(meta_mod.DEFINITION_LONG)}</p>'
+              if meta_live else '')
+    chan = (f'<div class="card"><h2>By channel — {E(label)}</h2><table>\n'
+            f'      <tr><th>Channel</th><th class="num">Leads</th><th class="num">Spend</th><th class="num">Cost/lead</th></tr>\n'
+            + _crows + f'    </table>{_cnote}</div>')
 
     charts = ('<div class="charts">' +
               rh._bar_chart("Total monthly leads — last 13 months", mlabels, lead_series, "var(--s2)",
@@ -193,7 +238,8 @@ def main():
     table = rh.merged_market_table(
         f"By market — {label}",
         [(market_name(c), v["conv"], v["cost"]) for c, v in ads_camp_m.items() if v["cost"] >= 1],
-        [(n, v["leads"], v["cost"]) for n, v in lsa_market_m.items() if v["cost"] >= 1 or v["leads"]])
+        [(n, v["leads"], v["cost"]) for n, v in lsa_market_m.items() if v["cost"] >= 1 or v["leads"]],
+        meta_rows=[(n, v["leads"], v["cost"]) for n, v in meta_market_m.items()])
 
     # beyond paid media (work log entries in month)
     beyond = ""
@@ -274,12 +320,22 @@ def main():
     narrative = '<div class="card"><h2>The month in brief</h2>' + \
                 "".join(f'<p style="margin:8px 0">{E(s)}</p>' for s in story) + "</div>"
 
+    # Every figure states its definition — see the 2026-08-07 LSA charged-vs-total escalation.
+    footer_note = ('A "lead" = a phone call or form submission from search ads, or a charged '
+                   'Local Services lead. Figures may restate slightly as late conversions land.')
+    if meta_live:
+        footer_note = ('A "lead" = a phone call or form submission from search ads, a charged '
+                       'Local Services lead, or a Facebook-attributed result from Ads Manager. '
+                       'Facebook results count conversions Meta ties back to an ad click — not the '
+                       'pixel\'s raw Lead total, which also counts form fills from other traffic '
+                       'sources. Figures may restate slightly as late conversions land.')
+
     html_out = f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{E(ACCOUNT_NAME)} — monthly marketing report · {E(label)}</title>
 <style>{rh.CSS}</style></head>
 <body class="viz-root"><div class="wrap">
-  {rh.brand_header("Monthly Marketing Report", label, f"{ACCOUNT_NAME} · Google Ads + Local Services Ads")}
+  {rh.brand_header("Monthly Marketing Report", label, f"{ACCOUNT_NAME} · " + " + ".join(["Google Ads", "Local Services Ads"] + (["Facebook Ads"] if meta_live else [])))}
   {tiles}
   {narrative}
   {beyond}
@@ -292,13 +348,18 @@ def main():
   {sitecard}
   <div class="endgroup">
   {focus}
-  {rh.brand_footer('A "lead" = a phone call or form submission from search ads, or a charged Local Services lead. Figures may restate slightly as late conversions land.')}
+  {rh.brand_footer(footer_note)}
   </div>
 </div><div id="tip"></div>{rh.TIP_JS}</body></html>"""
 
     os.makedirs(OUT_DIR, exist_ok=True)
     html_path = os.path.join(OUT_DIR, f"monthly-{mk}.html")
     with open(html_path, "w") as f: f.write(html_out)
+    if not meta_data.get("available") and meta_mod.load_meta_config():
+        print(f"[META] ⚠️  Meta is configured but could not be read ({meta_data.get('reason','unknown')}). "
+              "Blended cost per lead below EXCLUDES any Meta spend.")
+    elif meta_data.get("available") and not meta_live:
+        print("[META] connected, no spend or results in this month — Meta omitted by design.")
     print(f"{label}: {M['leads']:.0f} leads · {rh.fmt_usd(M['cost'])} · CPL {rh.fmt_usd(M['cpl'])} "
           f"(prior mo: {P['leads']:.0f} @ {rh.fmt_usd(P['cpl'])}; YoY: {Y['leads']:.0f} @ {rh.fmt_usd(Y['cpl']) if Y['cpl'] else '—'})")
     for s in story: print("·", s)
@@ -308,7 +369,8 @@ def main():
         embed = {
             "title": f"{ACCOUNT_NAME} — Monthly Report · {label}",
             "color": dp.BLUE,
-            "description": f"**{M['leads']:.0f} total leads** · {rh.fmt_usd(M['cost'])} spend · **{rh.fmt_usd(M['cpl'])}/lead**\n"
+            "description": f"**{M['leads']:.0f} total leads** · {rh.fmt_usd(M['cost'])} spend · **{rh.fmt_usd(M['cpl'])}/lead**"
+                           + (f" · Facebook: {M['meta']['leads']:.0f} @ {rh.fmt_usd(M['meta']['cost']/M['meta']['leads']) if M['meta']['leads'] else '—'}" if meta_live else "") + "\n"
                            f"vs {date(py,pm,1).strftime('%B')}: {P['leads']:.0f} @ {rh.fmt_usd(P['cpl']) if P['cpl'] else '—'}",
             "fields": [{"name": "Summary", "value": ("\n".join("• " + s for s in story))[:1024], "inline": False}],
             "footer": {"text": "Executive-ready report attached"},

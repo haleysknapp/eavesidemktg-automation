@@ -4,6 +4,12 @@ Roofing Force — Google Ads daily report.
 Pulls yesterday + last-7-day performance, search terms with junk flagging,
 keyword QS, budget pacing, and posts to Discord (summary + HTML attachment).
 
+Meta (Facebook) appears in the Discord pulse only on days it actually has spend.
+The HTML body stays Google-Ads-only on purpose — it is the search operations
+report (search terms, quality score, budget pacing), and none of those concepts
+exist on Meta. Cross-channel totals and blended cost per lead live in
+weekly_exec.py and monthly_exec.py, which read every channel.
+
 Usage: python3 daily_report.py [--no-discord]
 Outputs: out/report-YYYY-MM-DD.html and out/report-YYYY-MM-DD.txt
 """
@@ -217,7 +223,31 @@ def delta_str(new, old):
     return f"{arrow}{abs(d):.0f}%"
 
 # ---------- rendering ----------
-def render_text(run_date, camps, alerts):
+def meta_pulse(d_yest, d_7_start):
+    """(line_or_None, meta_dict) — Facebook-attributed results from Ads Manager for
+    yesterday and the trailing 7 days. Returns None when there is no Meta spend, so a
+    client without a live Meta campaign sees no change to the daily pulse at all."""
+    try:
+        import meta as meta_mod
+    except Exception:
+        return None, None
+    md = meta_mod.fetch_meta(d_7_start, d_yest)
+    y_cost, y_res = meta_mod.window(md, d_yest, d_yest)
+    w_cost, w_res = meta_mod.window(md, d_7_start, d_yest)
+    if not (y_cost or w_cost or y_res or w_res):
+        if not md.get("available") and meta_mod.load_meta_config():
+            return (f"[META] not counted — {md.get('reason','unknown')}"), md
+        return None, md
+    y_cpl = y_cost / y_res if y_res else 0
+    w_cpl = w_cost / w_res if w_res else 0
+    line = (f"Facebook yesterday: {fmt_usd(y_cost)} · {y_res:.0f} results · "
+            f"CPL {fmt_usd(y_cpl) if y_cpl else '—'} | last 7d: {fmt_usd(w_cost)} · "
+            f"{w_res:.0f} results · CPL {fmt_usd(w_cpl) if w_cpl else '—'} "
+            f"(Facebook-attributed results from Ads Manager)")
+    return line, md
+
+
+def render_text(run_date, camps, alerts, meta_line=None):
     L = []
     enabled = [c for c in camps.values() if c["status"] == "ENABLED"]
     tot = {b: {k: sum(c[b][k] for c in enabled) for k in ("cost","clicks","conv","value")} for b in ("yest","last7","prev7")}
@@ -225,12 +255,14 @@ def render_text(run_date, camps, alerts):
     cpl_7 = tot['last7']['cost']/tot['last7']['conv'] if tot['last7']['conv'] else 0
     L.append(f"Yesterday: {fmt_usd(tot['yest']['cost'])} spend · {tot['yest']['conv']:.0f} conv · CPL {fmt_usd(cpl_y)}")
     L.append(f"Last 7d: {fmt_usd(tot['last7']['cost'])} ({delta_str(tot['last7']['cost'], tot['prev7']['cost'])}) · {tot['last7']['conv']:.0f} conv ({delta_str(tot['last7']['conv'], tot['prev7']['conv'])}) · CPL {fmt_usd(cpl_7)}")
+    if meta_line:
+        L.append(meta_line)
     for a in alerts[:6]:
         L.append(f"{ALERT_EMOJI[a['level']]} {a['msg']}")
     return "\n".join(L), tot
 
 # ---------- discord ----------
-def post_discord(run_date, camps, alerts, tot, html_path):
+def post_discord(run_date, camps, alerts, tot, html_path, meta_line=None):
     import discord_post as dp
     cpl_y = tot['yest']['cost']/tot['yest']['conv'] if tot['yest']['conv'] else 0
     cpl_7 = tot['last7']['cost']/tot['last7']['conv'] if tot['last7']['conv'] else 0
@@ -244,7 +276,7 @@ def post_discord(run_date, camps, alerts, tot, html_path):
             {"name": "Yesterday", "value": f"**{fmt_usd(tot['yest']['cost'])}** · {tot['yest']['conv']:.0f} leads · CPL {fmt_usd(cpl_y)}", "inline": True},
             {"name": "Last 7 days", "value": f"**{fmt_usd(tot['last7']['cost'])}** ({delta_str(tot['last7']['cost'], tot['prev7']['cost'])}) · {tot['last7']['conv']:.0f} leads · CPL {fmt_usd(cpl_7)}", "inline": True},
             {"name": "Alerts", "value": alert_lines[:1024], "inline": False},
-        ],
+        ] + ([{"name": "Facebook (Meta)", "value": meta_line[:1024], "inline": False}] if meta_line else []),
         "footer": {"text": "Full breakdown in the attached report"},
     }
     return dp.post(DISCORD_WEBHOOK, embed=embed)
@@ -269,7 +301,8 @@ def main():
 
     os.makedirs(OUT_DIR, exist_ok=True)
     run = str(today)
-    text, tot = render_text(run, camps, alerts)
+    meta_line, _meta_data = meta_pulse(d_yest, d_7_start)
+    text, tot = render_text(run, camps, alerts, meta_line=meta_line)
     import render_html as rh
     html_out = rh.render(run, ACCOUNT_NAME, "329-848-8566", camps, urgent, notes_, daily, terms_yest)
     txt_path = os.path.join(OUT_DIR, f"report-{run}.txt")
@@ -279,7 +312,7 @@ def main():
     print(text)
     print(f"\n[saved] {html_path}")
     if not no_discord:
-        posted = post_discord(run, camps, alerts, tot, html_path)
+        posted = post_discord(run, camps, alerts, tot, html_path, meta_line=meta_line)
         print(f"[discord] {'posted OK' if posted else 'FAILED'}")
     return html_path
 

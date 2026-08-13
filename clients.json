@@ -1,6 +1,6 @@
 {
-  "_readme": "Authoritative client registry. Which ad accounts belong to which client, which Discord channel gets which reports, and every per-client ID. Update this FIRST when onboarding. NOTE 2026-08-10: this file is currently documentation only - no Python reads it. Wiring it into config.py/lsa.py/render_html.py/listener.py is the prerequisite for real multi-client support. See SYSTEM.md section 10.",
-  "_last_reconciled": "2026-08-10 (context consolidation)",
+  "_readme": "Authoritative client registry. Which ad accounts belong to which client, which Discord channel gets which reports, and every per-client ID. Update this FIRST when onboarding. STATUS 2026-08-13: this file is now PARTIALLY load-bearing. gads-report/meta.py reads clients.meta.* at runtime (first real consumer). config.py/lsa.py/render_html.py/listener.py still hardcode Roofing Force and remain the outstanding prerequisite for real multi-client support. See SYSTEM.md section 10.",
+  "_last_reconciled": "2026-08-13 (Meta channel wired into reporting)",
   "manager_account": {
     "owner": "Haley Knapp / Eaveside",
     "google_ads_mcc": "968-076-3943",
@@ -10,11 +10,22 @@
     "_note": "The automation is split across two Google accounts and both display the name 'Haley Knapp'. Always check both. Only Owner='Me' is reliable in the Apps Script UI.",
     "haley@eaveside.com": {
       "script_google_index": "/u/0/",
-      "owns": ["Google Ads MCC + client accounts", "RF GADS sheet", "Apps Script project 'Call Tracking' (the call grader)", "Apps Script 'Site Leads'", "Apps Script 'LSA Lead Tracker'", "the three new RF workbooks"]
+      "owns": [
+        "Google Ads MCC + client accounts",
+        "RF GADS sheet",
+        "Apps Script project 'Call Tracking' (the call grader)",
+        "Apps Script 'Site Leads'",
+        "Apps Script 'LSA Lead Tracker'",
+        "the three new RF workbooks"
+      ]
     },
     "haleysknapp@gmail.com": {
       "script_google_index": "/u/1/",
-      "owns": ["Apps Script project 'RF Webhooks' (7 daily triggers, all AccuLynx/LSA/webhook sync)", "Apps Script 'RF Chat Leads'", "Marketing Metrics sheet"],
+      "owns": [
+        "Apps Script project 'RF Webhooks' (7 daily triggers, all AccuLynx/LSA/webhook sync)",
+        "Apps Script 'RF Chat Leads'",
+        "Marketing Metrics sheet"
+      ],
       "warning": "Live secrets (ACCULYNX_API_KEY, GADS_*, WEBHOOK_KEY) sit in Script Properties on this personal account rather than the agency one."
     }
   },
@@ -31,7 +42,9 @@
           "22311207505": "Joplin",
           "22311255805": "Mena"
         },
-        "paused": { "23799169822": "Wichita (paused 2026-07-23, zero leads at spend; revive-or-exit decision open)" }
+        "paused": {
+          "23799169822": "Wichita (paused 2026-07-23, zero leads at spend; revive-or-exit decision open)"
+        }
       },
       "lsa_accounts": {
         "2344723790": "Fort Smith",
@@ -39,7 +52,32 @@
         "2664128737": "Olathe (rolls up under Kansas City in reports)",
         "1830697125": "Wichita"
       },
-      "market_aliases": { "Olathe": "Kansas City" },
+      "meta": {
+        "_definition": "Report ONLY Ads Manager attributed results as Facebook performance. The pixel's raw Lead total mixes all-source website form fills with Facebook-only calls and must never be reported as Facebook results. See ctm-capi-bridge/META-CONVERSION-TRACKING-REFERENCE.md.",
+        "ad_account_id": "1779635922176764",
+        "business_portfolio_id": "23844115792860155",
+        "business_id": "288699235446574",
+        "pixel_id": "1110006736001318",
+        "result_action_types": [
+          "offsite_conversion.fb_pixel_lead",
+          "onsite_conversion.lead_grouped",
+          "lead"
+        ],
+        "campaigns": {
+          "RF | Leads | 2026-08 Launch 01": "launched 2026-08"
+        },
+        "ad_sets": {
+          "RF | JoCo KS | Site-Lead | Broad 25+": "Johnson County KS, broad, 25+"
+        },
+        "call_number": "(913) 565-4470",
+        "offline_event_set_id_DEAD": "1070553458860276",
+        "token_env_var": "meta_access_token",
+        "_token_note": "Value lives in mktg-bot/gads-report/.env under meta_access_token and is NEVER committed or written to a spreadsheet. When absent, meta.py returns zero rows and every report renders exactly as it did before Meta existed.",
+        "_market": "Kansas City"
+      },
+      "market_aliases": {
+        "Olathe": "Kansas City"
+      },
       "not_bidding_but_winning_work": {
         "_note": "24-month AccuLynx footprint shows real won work with zero ad spend. Largest unexploited finding as of 2026-08-10.",
         "Topeka": "52 jobs / $809K / 43.6mi p90",
@@ -70,11 +108,23 @@
       "discord": {
         "channel": "#roofing-force",
         "channel_id": "1532909401525059727",
-        "reports": ["gads-report-mon-thu", "search-terms-mon-thu", "friday-weekly", "monthly-exec", "hourly-worker"]
+        "reports": [
+          "gads-report-mon-thu",
+          "search-terms-mon-thu",
+          "friday-weekly",
+          "monthly-exec",
+          "hourly-worker"
+        ]
       },
       "email": {
-        "to": ["cburnett@roofingforce.com", "rdavis@roofingforce.com", "gdavis@roofingforce.com"],
-        "cc": ["george@eaveside.com"],
+        "to": [
+          "cburnett@roofingforce.com",
+          "rdavis@roofingforce.com",
+          "gdavis@roofingforce.com"
+        ],
+        "cc": [
+          "george@eaveside.com"
+        ],
         "voice_file": "gads-report/email-voice.md",
         "cpl_target_note": "< $160 blended CPL target; $200/channel ceiling per George's scale plan",
         "attachment_rule": "Rick Davis (rdavis@) CANNOT open HTML attachments. Client-facing reports must be PDF."
@@ -108,7 +158,18 @@
         "logo_source": "Haley's Mac: Roofing Agency/Photos (RF)/Logo-01.png",
         "photos": "Roofing Agency/Photos (RF)/ - 34 files",
         "static_ads": "Meta Creative Engine/output/roofing-force/2026-08-07-matrix/ - 20 ads, 60 JPEGs, RF-ads-copy.csv",
-        "brand_colors": { "red": "#d02028", "black": "#201820", "chart_light": ["#2569a3", "#d02028"], "chart_dark": ["#4f95d6", "#e2565e"] }
+        "brand_colors": {
+          "red": "#d02028",
+          "black": "#201820",
+          "chart_light": [
+            "#2569a3",
+            "#d02028"
+          ],
+          "chart_dark": [
+            "#4f95d6",
+            "#e2565e"
+          ]
+        }
       },
       "content_files": {
         "work_log": "gads-report/rf-work-log.md",
@@ -124,23 +185,38 @@
       "sheets": {
         "content_library": "1UmiCLxnsTMILpNrT_sray9mazJjAQJ9jNcf4s4PzUfs"
       },
-      "artifacts": ["copper-ridge-checklist (Cowork artifact: 4 items Haley, 5 Bryce homework, 11 Claude)"],
+      "artifacts": [
+        "copper-ridge-checklist (Cowork artifact: 4 items Haley, 5 Bryce homework, 11 Claude)"
+      ],
       "mac_folder": "/Users/haleyk/Documents/Haley Personal Hub/Roofing Agency/Copper Ridge Exteriors",
-      "_todo": "No Discord channel, no scheduled tasks, no Google Ads link yet. Gets the clean workbook set per SHEETS-PLAN.md section 6."
+      "_todo": "No Discord channel, no scheduled tasks, no Google Ads link yet. Gets the clean workbook set per SHEETS-PLAN.md section 6.",
+      "meta": {
+        "_none": "No Meta ad account yet. Add the roofing-force 'meta' block shape to enable the Meta channel."
+      }
     },
     "final-touch-roofs": {
       "name": "Final Touch Roofs",
       "status": "client workbook only",
-      "sheets": { "client_workbook": "1FACEC-oXC4jYKDRTPwUUpdVyBe9DSLJVOIcbWY69FhI" },
+      "sheets": {
+        "client_workbook": "1FACEC-oXC4jYKDRTPwUUpdVyBe9DSLJVOIcbWY69FhI"
+      },
       "note": "Has an 8th tab 'Bottoms-Up Model' not present in the master template - consider mirroring back.",
-      "mac_folder": "/Users/haleyk/Documents/Haley Personal Hub/Roofing Agency/Final Touch Roofs"
+      "mac_folder": "/Users/haleyk/Documents/Haley Personal Hub/Roofing Agency/Final Touch Roofs",
+      "meta": {
+        "_none": "No Meta ad account yet. Add the roofing-force 'meta' block shape to enable the Meta channel."
+      }
     },
     "definitive-construction": {
       "name": "Definitive Construction",
       "status": "prospect",
       "contact": "Keaton Crockett",
-      "sheets": { "client_workbook": "1BZl-4LM0M7wjuKl30x_bRY7GzfksAzfSV_0sJWV1dxA" },
-      "mac_folder": "/Users/haleyk/Documents/Haley Personal Hub/Roofing Agency/Definitive Construction"
+      "sheets": {
+        "client_workbook": "1BZl-4LM0M7wjuKl30x_bRY7GzfksAzfSV_0sJWV1dxA"
+      },
+      "mac_folder": "/Users/haleyk/Documents/Haley Personal Hub/Roofing Agency/Definitive Construction",
+      "meta": {
+        "_none": "No Meta ad account yet. Add the roofing-force 'meta' block shape to enable the Meta channel."
+      }
     }
   },
   "templates": {

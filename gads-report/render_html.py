@@ -194,36 +194,51 @@ def fmt_usd(x, dec=0): return f"${x:,.{dec}f}"
 # LSA accounts / campaigns that belong to a larger market roll up under it
 MARKET_ALIASES = {"Olathe": "Kansas City"}
 
-def merged_market_table(title, search_rows, lsa_rows):
-    """One row per market: total leads + Search/LSA split columns, combined spend, blended CPL.
-    search_rows / lsa_rows: iterables of (market_name, leads, cost). Markets sharing a name merge
-    (MARKET_ALIASES folds sub-markets in); a channel the market doesn't run shows an em dash."""
+def merged_market_table(title, search_rows, lsa_rows, meta_rows=None):
+    """One row per market: total leads + Search/LSA(/Facebook) split columns, combined spend,
+    blended CPL.
+    search_rows / lsa_rows / meta_rows: iterables of (market_name, leads, cost). Markets sharing
+    a name merge (MARKET_ALIASES folds sub-markets in); a channel the market doesn't run shows an
+    em dash.
+
+    The Facebook column only appears when meta_rows is non-empty, so reports for clients with no
+    Meta account render byte-identically to how they did before Meta existed. Facebook leads here
+    are Facebook-ATTRIBUTED results from Ads Manager, never the pixel's raw Lead total."""
     search_rows = [(MARKET_ALIASES.get(n, n), l, c) for n, l, c in search_rows]
     lsa_rows = [(MARKET_ALIASES.get(n, n), l, c) for n, l, c in lsa_rows]
+    meta_rows = [(MARKET_ALIASES.get(n, n), l, c) for n, l, c in (meta_rows or [])]
+    show_meta = bool(meta_rows)
     m = {}
     def slot(name):
-        return m.setdefault(name, {"s_leads": None, "s_cost": 0.0, "l_leads": None, "l_cost": 0.0})
+        return m.setdefault(name, {"s_leads": None, "s_cost": 0.0, "l_leads": None, "l_cost": 0.0,
+                                   "m_leads": None, "m_cost": 0.0})
     for name, leads, cost in search_rows:
         r = slot(name); r["s_leads"] = (r["s_leads"] or 0) + leads; r["s_cost"] += cost
     for name, leads, cost in lsa_rows:
         r = slot(name); r["l_leads"] = (r["l_leads"] or 0) + leads; r["l_cost"] += cost
+    for name, leads, cost in meta_rows:
+        r = slot(name); r["m_leads"] = (r["m_leads"] or 0) + leads; r["m_cost"] += cost
     rows = ""
-    for name, r in sorted(m.items(), key=lambda kv: -(kv[1]["s_cost"] + kv[1]["l_cost"])):
-        cost = r["s_cost"] + r["l_cost"]
-        leads = (r["s_leads"] or 0) + (r["l_leads"] or 0)
+    for name, r in sorted(m.items(), key=lambda kv: -(kv[1]["s_cost"] + kv[1]["l_cost"] + kv[1]["m_cost"])):
+        cost = r["s_cost"] + r["l_cost"] + r["m_cost"]
+        leads = (r["s_leads"] or 0) + (r["l_leads"] or 0) + (r["m_leads"] or 0)
         if cost < 1 and not leads: continue
         cpl = cost / leads if leads else None
         s = f'{r["s_leads"]:.0f}' if r["s_leads"] is not None else '<span class="mut">—</span>'
         l = f'{r["l_leads"]:.0f}' if r["l_leads"] is not None else '<span class="mut">—</span>'
+        fb = f'{r["m_leads"]:.0f}' if r["m_leads"] is not None else '<span class="mut">—</span>'
         rows += (f'<tr><td><b>{E(name)}</b></td>'
                  f'<td class="num">{leads:.0f}</td>'
                  f'<td class="num split">{s}</td>'
                  f'<td class="num split">{l}</td>'
-                 f'<td class="num">{fmt_usd(cost)}</td>'
+                 + (f'<td class="num split">{fb}</td>' if show_meta else '')
+                 + f'<td class="num">{fmt_usd(cost)}</td>'
                  f'<td class="num">{fmt_usd(cpl) if cpl else "—"}</td></tr>')
     return (f'<div class="card"><h2>{E(title)}</h2><table>'
             '<tr><th>Market</th><th class="num">Leads</th><th class="num">Search</th>'
-            '<th class="num">LSA</th><th class="num">Spend</th><th class="num">Cost/lead</th></tr>'
+            '<th class="num">LSA</th>'
+            + ('<th class="num">Facebook</th>' if show_meta else '')
+            + '<th class="num">Spend</th><th class="num">Cost/lead</th></tr>'
             + rows + '</table></div>')
 def pct(x): return f"{x*100:.0f}%" if x is not None else "—"
 
