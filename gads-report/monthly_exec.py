@@ -47,11 +47,15 @@ def main():
     svc = client.get_service("GoogleAdsService")
 
     # ---- google ads: monthly totals (13 mo) + per-campaign for report month ----
+    # REMOVED campaigns are excluded (Fix Queue #21, 2026-08-13). Without the filter,
+    # spend from deleted campaigns entered the monthly totals the CLIENT sees, and the
+    # 13-month trend could not be reconciled against the account.
     q = f"""
       SELECT campaign.name, campaign.status, segments.month,
              metrics.cost_micros, metrics.conversions
       FROM campaign
       WHERE segments.date BETWEEN '{hist_start}' AND '{m_end}'
+        AND campaign.status != 'REMOVED'
     """
     ads_monthly = defaultdict(lambda: {"cost": 0.0, "conv": 0.0})
     ads_camp_m = defaultdict(lambda: {"cost": 0.0, "conv": 0.0})

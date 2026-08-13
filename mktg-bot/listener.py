@@ -48,7 +48,11 @@ CLAUDE_TIMEOUT = 900  # seconds per message
 CLAUDE_MODEL = os.environ.get("MKTG_BOT_MODEL", "sonnet")
 # On wake, never replay more than this many messages, or anything older than this.
 MAX_BACKFILL = 15
-MAX_BACKFILL_AGE_HOURS = 12
+MAX_BACKFILL_AGE_HOURS = 72   # was 12 (Fix Queue #8, raised 2026-08-13). At 12h a Mac that
+                              # slept over a weekend silently RETIRED real approvals: the
+                              # backfill logged 'skipped N message(s) older than 12h' and
+                              # still called mark_seen(), so there was no reply, no reaction
+                              # and no record. 72h covers Fri-evening -> Monday-morning.
 
 # Pure acknowledgments — no reply needed, and definitely no Claude session.
 # NOTE: deliberately excludes "yes"/"no"/"all"/"approve" — those can be real

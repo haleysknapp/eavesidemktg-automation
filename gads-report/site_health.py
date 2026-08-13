@@ -51,19 +51,26 @@ def card(rh, title="Website status"):
                 f'<p style="margin:4px 0">{line}</p></div>')
     ok = lambda b: ('<span style="color:var(--goodtext);font-weight:600">OK</span>' if b
                     else '<span style="color:var(--crit);font-weight:600">CHECK</span>')
-    rows = bad + slow + no_track  # only the problems get a table row
+    # Fix Queue #20, 2026-08-13. The loop below used to rebind `up` and `slow` — the LISTS
+    # built above — to per-row booleans. The next use of len(up) then raised
+    # TypeError: object of type 'bool' has no len(), the caller's except swallowed it, and
+    # the entire Website section vanished from the client report EXACTLY when a page was
+    # down, i.e. the one time the section matters. Loop variables are now is_up / is_slow.
+    # Do not reuse the list names inside the loop.
+    n_total = len(rows)
+    n_up = len(up)
+    problem_rows = bad + slow + no_track  # only the problems get a table row
     body = ""
-    for r in rows:
-        up = r["status"] == 200
-        status_html = ok(True) if up else ok(False) + f' <span class="mut">({r["status"] or "no response"})</span>'
+    for r in problem_rows:
+        is_up = r["status"] == 200
+        status_html = ok(True) if is_up else ok(False) + f' <span class="mut">({r["status"] or "no response"})</span>'
         speed = f'{r["secs"]:.1f}s' if r["secs"] is not None else "—"
-        slow = r["secs"] is not None and r["secs"] > 4
+        is_slow = r["secs"] is not None and r["secs"] > 4
         body += (f'<tr><td><b>{rh.E(r["label"])}</b><br><span class="mut">{rh.E(r["url"].replace("https://",""))}</span></td>'
                  f'<td class="num">{status_html}</td>'
-                 f'<td class="num">{speed}{" ⚠" if slow else ""}</td>'
-                 f'<td class="num">{ok(bool(r["tracking"])) if up else "—"}</td></tr>')
-    n_total = len(bad) + len(up)
-    sub = (f'<div class="mut" style="margin-top:8px">{len(up)}/{n_total} pages up'
+                 f'<td class="num">{speed}{" ⚠" if is_slow else ""}</td>'
+                 f'<td class="num">{ok(bool(r["tracking"])) if is_up else "—"}</td></tr>')
+    sub = (f'<div class="mut" style="margin-top:8px">{n_up}/{n_total} pages up'
            + (f' · average load {avg:.1f}s' if avg else '')
            + ' · only pages needing attention are listed above</div>')
     return (f'<div class="card"><h2>{rh.E(title)}</h2><table>'
